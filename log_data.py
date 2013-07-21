@@ -126,7 +126,7 @@ class LoggerWindow(Frame):
         else: # log the workout
             self.logger.log(self.workouts[self.workout_cb.current()][0],
                             self.workouts[self.workout_cb.current()][1],
-                            self.name.get(), day=date.today())
+                            self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
 
             self.update_time_now()
             self.set_workout_now()
@@ -155,6 +155,9 @@ class LoggerWindow(Frame):
 
     def set_workout_now(self):
         #set workout field
+        if len(self.workouts) == 0:
+            self.disable_date_ent()
+            return #no workouts
         index = 0
         now = datetime.today()
         for i, workout in enumerate(self.workouts):
