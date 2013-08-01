@@ -1,0 +1,49 @@
+Data Files
+--------------------------------
+
+Payments (Book)
+	Monthly (Sheet)
+		- Customer
+		- Date
+	Punch Card (Sheet)
+		- Customer
+		- Date
+		- Remaining
+	Drop In (Sheet)
+		- Customer
+		- Date
+
+Info (Book)
+	Schedule (Sheet)
+		Week calendar for schedule
+	Customers (Sheet)
+		- First Name
+		- Middle Name
+		- Last Name
+		- Payment type (Monthly, Punch Card, Drop In)
+		- Date Joined
+		- Active
+
+Log<Year> (Book)
+	<Month (Jan - Dec)> (Sheet)
+
+
+Output Reports
+--------------------------------
+<Month><Year>_Report (Book)
+	Customers (Sheet)
+		- Customer
+		- # in <Month>
+	Schedule (Sheet)
+		Calendar display of class attendance
+
+
+Users - Actions
+-------------------------------
+Customer
+	Check In
+Admin
+	New Customer - > Payment?
+	Payment
+	Output Report
+	Options
