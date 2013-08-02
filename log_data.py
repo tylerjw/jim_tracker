@@ -16,7 +16,7 @@ Revision History:
     Remove email field for middle name
 (01 July 2013)
     Update customer list after new customer has been added.
-    Accomidate for suffixes (Jr, III, etc.)
+    Accommodated for suffixes (Jr, III, etc.)
 (02 July 2013)
     Add date field
 (03 July 2013)
@@ -24,33 +24,38 @@ Revision History:
     Fixed set workout bug
 
 TODO:
-    Automatically sellect correct workout.
+    Automatically select correct workout.
     Allow setting date to other than today.
     
 '''
 
 from Tkinter import StringVar,E,W
 from ttk import Frame, Button, Entry, Label, Combobox
-from tkMessageBox import showerror
-from datetime import datetime, date, timedelta
+from tkMessageBox import showerror,askquestion
+from DialogTemplate import Dialog
+from datetime import datetime,date,timedelta,time
+from time import strftime
+
 from customer import NewCustomerDialog, Customers
 from schedule import Schedule
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.style import Border, Fill
-from time import strftime
-from datetime import date, time
 
 from pprint import pprint
 
-class LoggerWindow(Frame):
-    def __init__(self):
-        Frame.__init__(self)
-        self.master.title("Log Workout")
-        self.pack()
+class NewCustomerException(Exception):
+    def __init__(self,name):
+        self.name = name
+    def __str__(self):
+        return self.name
+
+class LoggerDialog(Dialog):
+    def __init__(self, master, customers, class_=None, relx=0.5, rely=0.3):
+        Dialog.__init__(self, master, 'Check In', class_, relx, rely)
 
         self.name = StringVar() # variable for customer
-        self.customers = Customers() # customers object
+        self.customers = customers # customers object
         self.names = []
         self.populate_names()
         self.workout = StringVar()
@@ -60,12 +65,14 @@ class LoggerWindow(Frame):
         self.date = StringVar()
         self.date.set(strftime("%m/%d/%Y"))
         self.populate_workouts()
-        self.newc_diag = NewCustomerDialog(self, self.customers)
         self.logger = Logger()
         self.refresh_time = 15 # in minutes
         self.output = '' # for the output label at the bottom
 
-        inf = Frame(self)
+    def show(self):
+        self.setup()
+
+        inf = Frame(self.root)
         inf.pack(padx=10,pady=10)
         Label(inf, text="Name:").grid(row=0,column=0,sticky=E,ipady=2,pady=2,padx=10)
         Label(inf, text='Date:').grid(row=1,column=0,sticky=E,ipady=2,pady=2,padx=10)
@@ -82,12 +89,14 @@ class LoggerWindow(Frame):
                                    values=self.workouts_form)
         self.workout_cb.grid(row=2,column=1,sticky=W,columnspan=2)
 
-        self.log_btn=Button(inf,text="Log Workout",command=self.log)
-        self.log_btn.grid(row=3,column=0,columnspan=2,pady=4)
+        self.log_btn=Button(inf,text="Log Workout",command=self.log,width=12)
+        self.log_btn.grid(row=3,column=1,columnspan=2,pady=4,sticky='ew')
+        self.cancel_btn=Button(inf,text="Cancel",command=self.wm_delete_window)
+        self.cancel_btn.grid(row=3,column=0,pady=4,padx=5,sticky='w')
         self.out_ent = Label(inf, text=self.output)
         self.out_ent.grid(row=4,column=0,columnspan=3,pady=4)
 
-        self.master.bind('<Return>',self.log)
+        self.root.bind('<Return>',self.log)
         self.name_cb.focus_set()  # set the focus here when created
 
         #disable the date field
@@ -96,6 +105,8 @@ class LoggerWindow(Frame):
         #start time caller
         self.time_caller()
 
+        self.enable()
+
     def log(self, e=None):
         #check to see if name is blank
         if self.name.get() == '':
@@ -103,26 +114,7 @@ class LoggerWindow(Frame):
         elif self.workout.get() not in self.workouts_form:
             showerror("Error!", "Please select a workout from the list.")
         elif self.name.get() not in self.names: # new customer
-            #parse name and preset values in the new customer dialog
-            temp = self.name.get().split(' ')
-            self.newc_diag.fname.set(temp[0])
-            if len(temp) == 2:
-                self.newc_diag.lname.set(temp[1])
-            elif len(temp) == 3:
-                self.newc_diag.mname.set(temp[1])
-                self.newc_diag.lname.set(temp[2])
-            elif len(temp) > 3:
-                self.newc_diag.mname.set(temp[1])
-                self.newc_diag.lname.set(' '.join(temp[2:4]))
-            self.newc_diag.show()
-            # clean up new customer dialog lname value
-            # note, fname will always get updated
-            self.newc_diag.lname.set('')
-            self.newc_diag.mname.set('')
-
-            #update the names list
-            self.update_names()
-            
+            self.new_customer_error()
         else: # log the workout
             self.logger.log(self.workouts[self.workout_cb.current()][0],
                             self.workouts[self.workout_cb.current()][1],
@@ -132,6 +124,14 @@ class LoggerWindow(Frame):
             self.set_workout_now()
             self.update_workouts()
             
+    def new_customer_error(self):
+
+        if askquestion(title="New Customer?",
+            message="Add new customer: " + self.name.get(),
+            parent = self.root) == 'yes':
+            self.master.event_generate('<<NewCustomer>>')
+
+        self.update_names()
 
     def disable_date_ent(self, e=None):
         self.date_ent['state'] = 'disabled'
@@ -147,7 +147,7 @@ class LoggerWindow(Frame):
         self.set_workout_now()
         self.update_workouts() #update the workouts
         
-        self.after(msec, self.time_caller) #call again
+        self.root.after(msec, self.time_caller) #call again
 
     def update_time_now(self):
         self.enable_date_ent()
@@ -234,4 +234,9 @@ class Logger:
         
 
 if __name__ == '__main__':
-    LoggerWindow().mainloop()
+    root = Frame()
+    c = Customers()
+    log_diag = LoggerDialog(root, c)
+    Button(root,text='Check In',command=log_diag.show).pack()
+    root.pack()
+    root.mainloop()

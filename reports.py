@@ -20,7 +20,7 @@ def month_report(log_file,month,output_file):
     #get the data
     data = [[cell.value for cell in row] for row in sh.rows]
 
-    
+
     wb = Workbook()
     sh = wb.get_active_sheet()
     sh.title = "Customers"
