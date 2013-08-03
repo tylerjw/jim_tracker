@@ -59,7 +59,11 @@ class TrackerWindow(Frame):
 		self.bind('<<NewCustomer>>',self.new_customer)
 
 	def check_in(self):
-		self.logger_diag.show()
+		try:
+			self.logger_diag.show()
+		except IOError:
+			showerror("Error!", 
+				"jim_data" + str(datetime.now().year) + ".xls open in another application. Close file and try again.")
 
 	def new_customer(self, event=None):
 		#if evert this came as a new customer entry through check in

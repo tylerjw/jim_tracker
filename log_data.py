@@ -23,6 +23,8 @@ Revision History:
     Disable/Enable date text field
     Fixed set workout bug
 
+further revision history maintained in git
+
 TODO:
     Automatically select correct workout.
     Allow setting date to other than today.
@@ -31,6 +33,7 @@ TODO:
 
 from Tkinter import StringVar,E,W
 from ttk import Frame, Button, Entry, Label, Combobox
+from ScrolledText import ScrolledText
 from tkMessageBox import showerror,askquestion
 from DialogTemplate import Dialog
 from datetime import datetime,date,timedelta,time
@@ -41,6 +44,7 @@ from schedule import Schedule
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.style import Border, Fill
+from openpyxl.shared.exc import InvalidFileException
 
 from pprint import pprint
 
@@ -57,19 +61,18 @@ class LoggerDialog(Dialog):
         self.name = StringVar() # variable for customer
         self.customers = customers # customers object
         self.names = []
-        self.populate_names()
         self.workout = StringVar()
         self.workouts = []
         self.workouts_form = []
-        self.schedule = Schedule()
         self.date = StringVar()
         self.date.set(strftime("%m/%d/%Y"))
-        self.populate_workouts()
-        self.logger = Logger()
         self.refresh_time = 15 # in minutes
         self.output = '' # for the output label at the bottom
+        self.schedule = Schedule()
 
     def show(self):
+        self.logger = Logger() #throws IOError if file is open
+
         self.setup()
 
         inf = Frame(self.root)
@@ -86,15 +89,19 @@ class LoggerDialog(Dialog):
         self.date_ent.bind('<FocusOut>', self.update_workouts)
         Button(inf,text='Edit', command=self.enable_date_ent).grid(row=1,column=2,sticky=E)
         self.workout_cb = Combobox(inf, textvariable=self.workout, width=30,
-                                   values=self.workouts_form)
+                                   values=self.workouts_form,state='readonly')
         self.workout_cb.grid(row=2,column=1,sticky=W,columnspan=2)
 
         self.log_btn=Button(inf,text="Log Workout",command=self.log,width=12)
         self.log_btn.grid(row=3,column=1,columnspan=2,pady=4,sticky='ew')
         self.cancel_btn=Button(inf,text="Cancel",command=self.wm_delete_window)
         self.cancel_btn.grid(row=3,column=0,pady=4,padx=5,sticky='w')
-        self.out_ent = Label(inf, text=self.output)
-        self.out_ent.grid(row=4,column=0,columnspan=3,pady=4)
+        
+        self.scrolled_text = ScrolledText(inf,height=5,width=15,wrap='word',state='disabled')
+        self.scrolled_text.grid(row=4,column=0,columnspan=3,sticky='ew')
+
+        self.update_workouts()
+        self.update_names()
 
         self.root.bind('<Return>',self.log)
         self.name_cb.focus_set()  # set the focus here when created
@@ -107,18 +114,28 @@ class LoggerDialog(Dialog):
 
         self.enable()
 
+    def output_text(self,outstr):
+        self.scrolled_text['state'] = 'normal'
+        self.scrolled_text.insert('end',outstr)
+        self.scrolled_text.see('end')
+        self.scrolled_text['state'] = 'disabled'
+
     def log(self, e=None):
         #check to see if name is blank
         if self.name.get() == '':
-            showerror("Error!", "Please enter or select a name.")
+            self.output_text("! - Please select your name.\n")
         elif self.workout.get() not in self.workouts_form:
-            showerror("Error!", "Please select a workout from the list.")
+            self.output_text("! - Select valid workout.\n")
         elif self.name.get() not in self.names: # new customer
             self.new_customer_error()
         else: # log the workout
-            self.logger.log(self.workouts[self.workout_cb.current()][0],
-                            self.workouts[self.workout_cb.current()][1],
-                            self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+            try:
+                self.logger.log(self.workouts[self.workout_cb.current()][0],
+                                self.workouts[self.workout_cb.current()][1],
+                                self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+                self.output_text(self.name.get() + " Checked In\n")
+            except:
+                self.output_text("! - " + self.logger.filename + " open in another application.\n")
 
             self.update_time_now()
             self.set_workout_now()
@@ -162,7 +179,7 @@ class LoggerDialog(Dialog):
         now = datetime.today()
         for i, workout in enumerate(self.workouts):
             test = datetime.combine(date.today(),workout[0])
-            if now < (test - timedelta(minutes=30)):
+            if now < (test - timedelta(minutes=15)):
                 index = i
                 break
         self.workout_cb.current(index)
@@ -194,7 +211,11 @@ class LoggerDialog(Dialog):
         self.name_cb['values'] = self.names
         
     def populate_names(self):
-        clist = self.customers.get_list()
+        try:
+            clist = self.customers.get_list()
+        except IOError:
+            self.output_text("! - " + self.customers.filename + " open in another application.\n")
+            return
         clist.sort(key = lambda x: ', '.join(x[0:3]).lower())
         self.names = []
         for line in clist:
@@ -202,17 +223,28 @@ class LoggerDialog(Dialog):
 
     def find_line(self, name):
         [fname, mname, lname] = name.split(' ')
-        return self.customers.find(lname, fname, mname)
+        try:
+            return self.customers.find(lname, fname, mname)
+        except IOError:
+            self.output_text("! - " + self.customers.filename + " open in another application.\n")
+            return None
 
 class Logger:
-    def __init__(self, filename='jim_data.xlsx'):
+    def __init__(self):
         self.month = strftime("%B")
-        self.wb = load_workbook(filename)
-        self.filename = filename
+        self.year = strftime("%Y")
+        self.filename = 'jim_data' + self.year + '.xlsx'
+        try:
+            self.wb = load_workbook(self.filename)
+        except InvalidFileException:
+            self.wb = Workbook()
+            sh = self.wb.get_sheet_by_name("Sheet")
+            self.wb.remove_sheet(sh)
+
         self.sh = self.wb.get_sheet_by_name(self.month)
         if not self.sh:
             self.wb.create_sheet(title=self.month)
-            print "Created new month log: " + self.month
+            # print "Created new month log: " + self.month
             self.sh = self.wb.get_sheet_by_name(self.month)
             self.sh.append(['Date','Time','Class Type','Customer'])
             for col in range(4):
@@ -223,6 +255,7 @@ class Logger:
 
         self.sh.garbage_collect()
         self.wb.save(self.filename)
+
 
     def log(self, hour, class_type, customer, day=date.today()):
         line = [day, hour.strftime('%H:%M'), class_type, customer]
