@@ -16,10 +16,14 @@ jim_payments<year>.xlsx (book)
 '''
 #standard python
 from time import strftime
+from datetime import datetime
 #openpyxl
 from openpyxl import Workbook, load_workbook
 from openpyxl.shared.exc import InvalidFileException
 from openpyxl.style import Border, Fill
+from openpyxl.cell import get_column_letter
+
+#jim_tracker
 
 class Payments:
     def __init__(self):
@@ -29,6 +33,7 @@ class Payments:
         '''
         self.month = strftime("%B")
         self.year = strftime("%Y")
+        self.highest_row = 0
         self.open_workbook()
         self.open_sheet()
         
@@ -57,11 +62,16 @@ class Payments:
             self.sh.append(['Customer', 'Date', 'Customer', 'Date', 'Remaining', 'Customer', 'Date'])
             for row in range(2):
                 for col in range(7):
-                    cell = self.sh.cell(row=0, column=col).style
+                    cell = self.sh.cell(row=row, column=col).style
                     cell.fill.fill_type = Fill.FILL_SOLID
                     cell.fill.start_color.index = "FFDDD9C4"
                     cell.borders.bottom.border_style = Border.BORDER_THIN
 
+            # set column widths
+            column_widths = [20,12,20,12,12,20,12]
+            for i, column_width in enumerate(column_widths):
+                worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
+        
             # auto card import
             today = datetime.today()
             old = None
@@ -72,8 +82,7 @@ class Payments:
 
             self.update_cards(old.strftime("%B"), old.strftime("%Y"))
 
-        self.sh.garbage_collect()
-        self.wb.save(self.filename)
+        self.format_save()
 
     def monthly_payment(self, customer, date = datetime.today()):
         '''
@@ -88,8 +97,7 @@ class Payments:
         self.sh.cell(row=row,column=0).value = customer
         self.sh.cell(row=row,column=1).value = date
 
-        self.sh.garbage_collect()
-        self.wb.save(self.filename)
+        self.format_save()
 
     def new_punchcard(self, customer, date = datetime.today(), punches = 10):
         '''
@@ -104,9 +112,9 @@ class Payments:
         self.sh.cell(row=row,column=2).value = customer
         self.sh.cell(row=row,column=3).value = date
         self.sh.cell(row=row,column=4).value = punches
+        self.sh.cell(row=row,column=4).style.number_format.format_code = '0'
 
-        self.sh.garbage_collect()
-        self.wb.save(self.filename)
+        self.format_save()
 
     def punch(self, customer):
         '''
@@ -121,20 +129,24 @@ class Payments:
         row = 2
         cust_column = 2
         punch_column = 4
-        while (self.sh.cell(row=row,column=cust_column).value != customer and
-            self.sh.cell(row=row,column=punch_column).value != 0:
+        for row in range(self.highest_row):
+            if self.sh.cell(row=row,column=cust_column).value == customer:
+                if int(self.sh.cell(row=row,column=punch_column).value) > 0:
+                    break
             if self.sh.cell(row=row,column=cust_column) == None: # not found
                 return None
-            row += 1
-            
-        self.sh.cell(row=row,column=punch_column).value -= 1
-        return self.sh.cell(row=row,column=punch_column).value
 
-        self.sh.garbage_collect()
-        self.wb.save(self.filename)
+        print self.sh.cell(row=row,column=punch_column).value
+            
+        punch = int(self.sh.cell(row=row,column=punch_column).value) - 1
+        self.sh.cell(row=row,column=punch_column).value = punch
+
+        return punch
+
+        self.format_save()
 
     def drop_in(self, customer, date = datetime.today()):
-         '''
+        '''
         enters a drop in Payment
         '''
         #find the next empty line (row value)
@@ -146,10 +158,9 @@ class Payments:
         self.sh.cell(row=row,column=5).value = customer
         self.sh.cell(row=row,column=6).value = date
 
-        self.sh.garbage_collect()
-        self.wb.save(self.filename)
+        self.format_save()
 
-    def update_cards(self, from_month, year = self.year):
+    def update_cards(self, from_month, year = None):
         '''
         copies in old punches from previous month
         can copy in from old years (different filename)
@@ -157,6 +168,9 @@ class Payments:
         returns None if month or year does not exist
         returns number of cards copied otherwise
         '''
+        if not year:
+            year = self.year
+
         cards = []
 
         if year != self.year: #different year
@@ -200,8 +214,7 @@ class Payments:
             cards_copied += 1
 
         if cards_copied:
-            self.sh.garbage_collect()
-            self.wb.save(self.filename)
+            self.format_save()
 
         return cards_copied
 
@@ -217,3 +230,46 @@ class Payments:
             row += 1
 
         return False
+
+    def format_save(self):
+        self.sh.garbage_collect()
+        self.format_borders()
+        self.wb.save(self.filename)
+
+    def format_borders(self):
+        columns = [1, 4, 6]
+        for row in range(self.highest_row, self.sh.get_highest_row()):
+            for col in columns:
+                cell = self.sh.cell(row=row, column=col).style
+                cell.borders.right.border_style = Border.BORDER_THIN
+
+        self.highest_row = self.sh.get_highest_row()
+
+if __name__ == '__main__':
+    p = Payments()
+
+    monthly_customers = ['Tyler J Weaver', 'Marcus T Weaver']
+    p.monthly_payment(monthly_customers[0])
+
+    for c in monthly_customers:
+        print c
+        if p.has_paid_monthly(c): 
+            print "Paid"
+        else:
+            print "Unpaid"
+
+    punch_card_customers = ['Brad Bradley', 'Sam P Frank']
+
+    for c in punch_card_customers:
+        p.new_punchcard(c)
+
+    for x in range(4):
+        print punch_card_customers[0], p.punch(punch_card_customers[0])
+
+    for x in range(7):
+        print punch_card_customers[1], p.punch(punch_card_customers[1])
+
+    drop_in_customers = ['Tom R Jones', 'Rodgers P Smith']
+
+    p.drop_in(drop_in_customers[0])
+    p.drop_in(drop_in_customers[1])
