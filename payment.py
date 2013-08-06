@@ -13,6 +13,8 @@ jim_payments<year>.xlsx (book)
         Drop In (column 5,6)
             Customer - 5
             Date - 6
+
+TODO: forward dated entries
 '''
 #standard python
 from time import strftime
@@ -22,9 +24,80 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.shared.exc import InvalidFileException
 from openpyxl.style import Border, Fill
 from openpyxl.cell import get_column_letter
+#tkinter
+from ttk import Frame,Label,Entry,Combobox,LabelFrame,Button
+from Tkinter import StringVar
+#jim tracker
+from customer_frame import Customers
+
+class PaymentFrame(Frame):
+    """docstring for PaymentFrame"""
+    def __init__(self, master, customers, payments):
+        Frame.__init__(self, master)
+        self.customers = customers
+        self.payments = payments
+        self.pname = StringVar()
+        self.pnames = []
+        self.mname = StringVar()
+        self.mnames = []
+        self.date = StringVar()
+        self.date.set(strftime("%m/%d/%Y"))
+
+        # Monthly Customers
+        monthly_lf = LabelFrame(self, text="Monthly Customers Payment")
+        monthly_lf.grid(row=0,column=0,padx=5,pady=5,ipadx=5,ipady=5)
+        
+        Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
+        Label(monthly_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
+
+        self.mname_cb = Combobox(monthly_lf,textvariable=self.mname,width=20,values=self.mnames,
+            state='readonly')
+        self.mname_cb.grid(row=0,column=1,sticky='w')
+
+        Entry(monthly_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
+
+        Button(monthly_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
+        Button(monthly_lf,text='Submit',width=15).grid(row=3,column=3,sticky='e')
+
+        # Punch Card Customers
+        puch_lf = LabelFrame(self, text="Punch Card Customers (Purchace Card)")
+        puch_lf.grid(row=1,column=0,padx=5,pady=5,ipadx=5,ipady=5)
+        
+        Label(puch_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
+        Label(puch_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
+
+        self.pname_cb = Combobox(puch_lf,textvariable=self.pname,width=20,values=self.pnames,
+            state='readonly')
+        self.pname_cb.grid(row=0,column=1,sticky='w')
+
+        Entry(puch_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
+
+        Button(puch_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
+        Button(puch_lf,text='Submit',width=15).grid(row=3,column=3,sticky='e')
+
+        self.pack(padx=10,pady=10)
+
+        self.update_names()
+
+    def update_names(self):
+        self.populate_names()
+        self.mname_cb['values'] = self.mnames
+        self.mname_cb.current(0)
+        self.pname_cb['values'] = self.pnames
+        self.pname_cb.current(0)
+        
+    def populate_names(self):
+        # try:
+        clist = self.customers.get_list()
+        # except IOError:
+        #     self.output_text("! - " + self.customers.filename + " open in another application.\n")
+        #     return
+        clist.sort(key = lambda x: ', '.join(x[0:3]).lower())
+        self.mnames = [' '.join([line[1],line[2],line[0]]) for line in clist if line[3]=='Monthly']
+        self.pnames = [' '.join([line[1],line[2],line[0]]) for line in clist if line[3]=='Punch Card']
+
 
 #jim_tracker
-
 class Payments:
     def __init__(self):
         '''
@@ -245,7 +318,7 @@ class Payments:
 
         self.highest_row = self.sh.get_highest_row()
 
-if __name__ == '__main__':
+def test1():
     p = Payments()
 
     monthly_customers = ['Tyler J Weaver', 'Marcus T Weaver']
@@ -273,3 +346,6 @@ if __name__ == '__main__':
 
     p.drop_in(drop_in_customers[0])
     p.drop_in(drop_in_customers[1])
+
+if __name__ == '__main__':
+    PaymentFrame(None, Customers(), Payments()).mainloop()

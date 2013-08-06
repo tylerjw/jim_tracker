@@ -30,15 +30,15 @@ TODO:
 from openpyxl import Workbook, load_workbook
 from datetime import date, datetime
 from Tkinter import Toplevel, StringVar, IntVar, W, E, LEFT, Message, BOTH
-from ttk import Entry, Button, Frame, Label, Combobox
+from ttk import Entry, Button, Frame, Label, Combobox,LabelFrame
 from pprint import pprint
 from DialogTemplate import Dialog
 from tkMessageBox import showerror
 import re
 
-class NewCustomerFrame(Frame):
+class NewCustomerFrame(LabelFrame):
     def __init__(self, master, customers):
-        Frame.__init__(self, master)
+        LabelFrame.__init__(self, master, text="New Customer")
         self.customers = customers
         self.fname = StringVar()
         self.lname = StringVar()
@@ -70,10 +70,10 @@ class NewCustomerFrame(Frame):
         self.date_en.grid(row=1,column=4,columnspan=2,sticky=W)
         
         ### buttons
-        Button(self, text='Clear Values', width=15,
-               command=self.reset_values).grid(row=3, column=2, sticky=W, padx=10, pady=3)
+        Button(self, text='Reset Values', width=15,
+               command=self.reset_values).grid(row=3,column=0,columnspan=3,sticky='w',padx=10,pady=3)
         Button(self, text='Submit', width=15,
-               command=self.add_customer).grid(row=3, column=4, sticky=W)
+               command=self.add_customer).grid(row=3,column=4,sticky='e')
 
         # self.root.bind("<Return>", self.add_customer)
         self.fname_en.focus_set()
