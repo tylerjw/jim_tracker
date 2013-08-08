@@ -31,7 +31,7 @@ TODO:
     
 '''
 
-from Tkinter import StringVar,E,W
+from Tkinter import StringVar,E,W,Toplevel
 from ttk import Frame, Button, Entry, Label, Combobox
 from ScrolledText import ScrolledText
 from tkMessageBox import showerror,askquestion
@@ -54,9 +54,14 @@ class NewCustomerException(Exception):
     def __str__(self):
         return self.name
 
-class LoggerDialog(Dialog):
-    def __init__(self, master, customers, class_=None, relx=0.5, rely=0.3):
-        Dialog.__init__(self, master, 'Check In', class_, relx, rely)
+class LoggerDialog(Toplevel):
+    def __init__(self, master, customers):
+        Toplevel.__init__(self,master)
+
+        self.root = master
+
+        self.title("Check In")
+        self.iconname = "Check In"
 
         self.name = StringVar() # variable for customer
         self.customers = customers # customers object
@@ -70,12 +75,9 @@ class LoggerDialog(Dialog):
         self.output = '' # for the output label at the bottom
         self.schedule = Schedule()
 
-    def show(self):
         self.logger = Logger() #throws IOError if file is open
 
-        self.setup()
-
-        inf = Frame(self.root)
+        inf = Frame(self)
         inf.pack(padx=10,pady=10)
         Label(inf, text="Name:").grid(row=0,column=0,sticky=E,ipady=2,pady=2,padx=10)
         Label(inf, text='Date:').grid(row=1,column=0,sticky=E,ipady=2,pady=2,padx=10)
@@ -94,8 +96,8 @@ class LoggerDialog(Dialog):
 
         self.log_btn=Button(inf,text="Log Workout",command=self.log,width=12)
         self.log_btn.grid(row=3,column=1,columnspan=2,pady=4,sticky='ew')
-        self.cancel_btn=Button(inf,text="Cancel",command=self.wm_delete_window)
-        self.cancel_btn.grid(row=3,column=0,pady=4,padx=5,sticky='w')
+        # self.cancel_btn=Button(inf,text="Cancel",command=self.distroy)
+        # self.cancel_btn.grid(row=3,column=0,pady=4,padx=5,sticky='w')
         
         self.scrolled_text = ScrolledText(inf,height=5,width=15,wrap='word',state='disabled')
         self.scrolled_text.grid(row=4,column=0,columnspan=3,sticky='ew')
@@ -103,7 +105,7 @@ class LoggerDialog(Dialog):
         self.update_workouts()
         self.update_names()
 
-        self.root.bind('<Return>',self.log)
+        self.bind('<Return>',self.log)
         self.name_cb.focus_set()  # set the focus here when created
 
         #disable the date field
@@ -111,8 +113,6 @@ class LoggerDialog(Dialog):
 
         #start time caller
         self.time_caller()
-
-        self.enable()
 
     def output_text(self,outstr):
         self.scrolled_text['state'] = 'normal'
@@ -145,8 +145,8 @@ class LoggerDialog(Dialog):
 
         if askquestion(title="New Customer?",
             message="Add new customer: " + self.name.get(),
-            parent = self.root) == 'yes':
-            self.master.event_generate('<<NewCustomer>>')
+            parent = self) == 'yes':
+            self.event_generate('<<NewCustomer>>')
 
         self.update_names()
 
@@ -164,7 +164,7 @@ class LoggerDialog(Dialog):
         self.set_workout_now()
         self.update_workouts() #update the workouts
         
-        self.root.after(msec, self.time_caller) #call again
+        self.after(msec, self.time_caller) #call again
 
     def update_time_now(self):
         self.enable_date_ent()
@@ -270,6 +270,4 @@ if __name__ == '__main__':
     root = Frame()
     c = Customers()
     log_diag = LoggerDialog(root, c)
-    Button(root,text='Check In',command=log_diag.show).pack()
-    root.pack()
-    root.mainloop()
+    log_diag.mainloop()
