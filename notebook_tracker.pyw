@@ -36,19 +36,16 @@ class JimNotebook(Frame):
         #notebook
         self.nb = Notebook(self, name='notebook')
 
-        #admin frame
-        admin_frame = Frame(self.nb, name='admin')
-        #new customer
-        nc_frame = NewCustomerFrame(admin_frame, self.customers)
-        nc_frame.pack(padx=5,pady=5,ipadx=30,ipady=5,fill='x')
-        #payment
-        pt_frame = PaymentFrame(admin_frame, self.customers, self.payments)
-        nc_frame.pack(padx=5,pady=5,ipadx=5,ipady=5)
-        admin_frame.pack()
-        self.nb.add(admin_frame, text="Admin",sticky='ew')
+        #frames
+        pt_frame = PaymentFrame(self.nb, self.customers, self.payments)
+        nc_frame = NewCustomerFrame(self.nb, self.customers)
+
+        #add to notebook
+        self.nb.add(nc_frame, text="Customers")
+        self.nb.add(pt_frame, text="Payments")
 
         #pack notebook
-        self.nb.pack()
+        self.nb.pack(expand=True,fill='both')
 
 if __name__ == '__main__':
     JimNotebook().mainloop()

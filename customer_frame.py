@@ -36,9 +36,9 @@ from DialogTemplate import Dialog
 from tkMessageBox import showerror
 import re
 
-class NewCustomerFrame(LabelFrame):
+class NewCustomerFrame(Frame):
     def __init__(self, master, customers):
-        LabelFrame.__init__(self, master, text="New Customer")
+        Frame.__init__(self, master)
         self.customers = customers
         self.fname = StringVar()
         self.lname = StringVar()
@@ -47,21 +47,25 @@ class NewCustomerFrame(LabelFrame):
         self.date = StringVar()
         self.iconname="New Customer"
 
+        lf = LabelFrame(self, text="New Customer")
+        lf.grid(padx=5,pady=5,ipadx=5,ipady=5,sticky='nsew')
+        # self.pack(fill='both',expand=True)
+
         # self.root = Toplevel(master)
         
         ### dialog content        
-        Label(self, text="Name: ").grid(row=0,sticky='e',ipady=2,pady=2)
-        Label(self, text="Type: ").grid(row=1,sticky='e',ipady=2,pady=2)
-        Label(self, text="Date:").grid(row=1,column=3,sticky='e',ipady=2,pady=2)
+        Label(lf, text="Name: ").grid(row=0,sticky='e',ipady=2,pady=2)
+        Label(lf, text="Type: ").grid(row=1,sticky='e',ipady=2,pady=2)
+        Label(lf, text="Date:").grid(row=1,column=3,sticky='e',ipady=2,pady=2)
 
-        self.fname_en = Entry(self, width=20, textvariable=self.fname)
-        self.mname_en = Entry(self, width=4, textvariable=self.mname)
-        self.lname_en = Entry(self, width=20, textvariable=self.lname)
-        self.payment_cb = Combobox(self, textvariable=self.payment, width=12,
+        self.fname_en = Entry(lf, width=20, textvariable=self.fname)
+        self.mname_en = Entry(lf, width=4, textvariable=self.mname)
+        self.lname_en = Entry(lf, width=20, textvariable=self.lname)
+        self.payment_cb = Combobox(lf, textvariable=self.payment, width=12,
                                    values=("Drop In", "Punch Card", "Monthly"))
-        self.date_en = Entry(self, width=15, textvariable=self.date)
+        self.date_en = Entry(lf, width=15, textvariable=self.date)
 
-        Frame(self, width=5).grid(row=0,column=1,sticky=W)
+        Frame(lf, width=5).grid(row=0,column=1,sticky=W)
         
         self.fname_en.grid(row=0,column=2,sticky=W)
         self.mname_en.grid(row=0,column=3,sticky='ew')
@@ -70,9 +74,9 @@ class NewCustomerFrame(LabelFrame):
         self.date_en.grid(row=1,column=4,columnspan=2,sticky=W)
         
         ### buttons
-        Button(self, text='Reset Values', width=15,
+        Button(lf, text='Reset Values', width=15,
                command=self.reset_values).grid(row=3,column=0,columnspan=3,sticky='w',padx=10,pady=3)
-        Button(self, text='Submit', width=15,
+        Button(lf, text='Submit', width=15,
                command=self.add_customer).grid(row=3,column=4,sticky='e')
 
         # self.root.bind("<Return>", self.add_customer)
