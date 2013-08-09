@@ -45,7 +45,7 @@ class PaymentFrame(Frame):
 
         # Monthly Customers
         monthly_lf = LabelFrame(self, text="Monthly Customers Payment")
-        monthly_lf.grid(row=0,column=0,padx=5,pady=5,ipadx=5,ipady=5)
+        monthly_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
         
         Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
         Label(monthly_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
@@ -61,7 +61,7 @@ class PaymentFrame(Frame):
 
         # Punch Card Customers
         puch_lf = LabelFrame(self, text="Punch Card Customers (Purchace Card)")
-        puch_lf.grid(row=1,column=0,padx=5,pady=5,ipadx=5,ipady=5)
+        puch_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
         
         Label(puch_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
         Label(puch_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
@@ -75,7 +75,7 @@ class PaymentFrame(Frame):
         Button(puch_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
         Button(puch_lf,text='Submit',width=15).grid(row=3,column=3,sticky='e')
 
-        self.pack(padx=10,pady=10)
+        self.pack(padx=10,pady=10,expand=True,fill='both')
 
         self.update_names()
 

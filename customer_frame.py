@@ -48,8 +48,8 @@ class NewCustomerFrame(Frame):
         self.iconname="New Customer"
 
         lf = LabelFrame(self, text="New Customer")
-        lf.grid(padx=5,pady=5,ipadx=5,ipady=5,sticky='nsew')
-        # self.pack(fill='both',expand=True)
+        lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
+        self.pack(fill='both',expand=True)
 
         # self.root = Toplevel(master)
         

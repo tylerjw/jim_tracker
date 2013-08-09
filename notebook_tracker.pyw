@@ -8,6 +8,7 @@ from Tkinter import Text,Menu
 #jim tracker
 from customer_frame import NewCustomerFrame, Customers
 from payment import PaymentFrame, Payments
+from log_data import CheckInFrame
 
 class JimNotebook(Frame):
     def __init__(self, name='notebookdemo'):
@@ -37,10 +38,12 @@ class JimNotebook(Frame):
         self.nb = Notebook(self, name='notebook')
 
         #frames
+        ci_frame = CheckInFrame(self.nb, self.customers)
         pt_frame = PaymentFrame(self.nb, self.customers, self.payments)
         nc_frame = NewCustomerFrame(self.nb, self.customers)
 
         #add to notebook
+        self.nb.add(ci_frame, text="Check In")
         self.nb.add(nc_frame, text="Customers")
         self.nb.add(pt_frame, text="Payments")
 

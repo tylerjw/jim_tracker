@@ -146,7 +146,7 @@ class LoggerDialog(Toplevel):
         if askquestion(title="New Customer?",
             message="Add new customer: " + self.name.get(),
             parent = self) == 'yes':
-            self.event_generate('<<NewCustomer>>')
+            self.root.event_generate('<<NewCustomer>>')
 
         self.update_names()
 
@@ -264,10 +264,24 @@ class Logger:
         self.sh.cell(row=(self.sh.get_highest_row()-1),
                          column=0).style.number_format.format_code='m/d/yyyy'
         self.wb.save(self.filename)
+
+class CheckInFrame(Frame):
+    def __init__(self,master,customers):
+        Frame.__init__(self,master)
+        self.customers = customers
+        self.master = master
+
+        btn = Button(self,text="Open Check In Dialog",command=self.logger_diag,
+            width=40)
+        btn.pack(padx=100,pady=100)
         
+    def logger_diag(self):
+        LoggerDialog(self.master, self.customers)
 
 if __name__ == '__main__':
     root = Frame()
+    root.pack()
     c = Customers()
-    log_diag = LoggerDialog(root, c)
-    log_diag.mainloop()
+    cif = CheckInFrame(root, c)
+    cif.pack()
+    root.mainloop()
