@@ -48,6 +48,9 @@ class NewCustomerDialog(Dialog):
         self.payment = StringVar()
         self.date = StringVar()
 
+
+        self.new_customer_name = None
+
     def show(self):
         self.setup() #base class setup
 
@@ -114,18 +117,21 @@ class NewCustomerDialog(Dialog):
                    str(self.payment.get()).strip(), datetime.strptime(self.date.get(), "%m/%d/%Y")]
             
             if not old and close:
+                self.new_customer_name = ' '.join([new[1],new[2],new[0]])
                 self.customers.add(new)
             elif close:
                 var = IntVar()
                 
-                diag = AlreadyExistsDialog(self, self.root, new, old, var)
+                diag = AlreadyExistsDialog(self.root, new, old, var)
                 diag.show()
                 if var.get() == 0: # edit
                     close = False
                 if var.get() == 1: # replace
                     self.customers.replace(row, new)
+                    self.new_customer_name = ' '.join([new[1],new[2],new[0]])
                 elif var.get() == 2: # add duplicate
                     self.customers.add(new)
+                    self.new_customer_name = ' '.join([new[1],new[2],new[0]])
             
             if close:
                 self.root.quit()
@@ -133,6 +139,8 @@ class NewCustomerDialog(Dialog):
 class NewCustomerFrame(Frame):
     def __init__(self, master, customers):
         Frame.__init__(self, master)
+
+        self.root = Toplevel(master)
         self.customers = customers
         self.fname = StringVar()
         self.lname = StringVar()
@@ -208,7 +216,7 @@ class NewCustomerFrame(Frame):
             else:
                 var = IntVar()
                 
-                diag = AlreadyExistsDialog(self, new, old, var)
+                diag = AlreadyExistsDialog(self.root, new, old, var)
                 diag.show()
                 if var.get() == 0: # edit
                     pass

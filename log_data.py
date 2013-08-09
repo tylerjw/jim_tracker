@@ -48,12 +48,6 @@ from openpyxl.shared.exc import InvalidFileException
 
 from pprint import pprint
 
-class NewCustomerException(Exception):
-    def __init__(self,name):
-        self.name = name
-    def __str__(self):
-        return self.name
-
 class LoggerDialog(Toplevel):
     def __init__(self, master, customers):
         Toplevel.__init__(self,master)
@@ -122,6 +116,7 @@ class LoggerDialog(Toplevel):
 
     def log(self, e=None):
         #check to see if name is blank
+        logged = False
         if self.name.get() == '':
             self.output_text("! - Please select your name.\n")
         elif self.workout.get() not in self.workouts_form:
@@ -129,26 +124,47 @@ class LoggerDialog(Toplevel):
         elif self.name.get() not in self.names: # new customer
             self.new_customer_error()
         else: # log the workout
+            name = self.name.get().split(' ')
+            (line, r) = self.customers.find(name[2],name[0],name[1])
+            if not line:
+                self.output_text("!! - No record: " + self.name.get() + ".\n")
             try:
                 self.logger.log(self.workouts[self.workout_cb.current()][0],
                                 self.workouts[self.workout_cb.current()][1],
                                 self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
                 self.output_text(self.name.get() + " Checked In\n")
-            except:
+                logged = True
+            except IOError:
                 self.output_text("! - " + self.logger.filename + " open in another application.\n")
 
-            self.update_time_now()
-            self.set_workout_now()
-            self.update_workouts()
+            if logged:
+                
+                self.update_time_now()
+                self.set_workout_now()
+                self.update_workouts()
             
     def new_customer_error(self):
-
+        self.ncd = NewCustomerDialog(self,self.customers)
         if askquestion(title="New Customer?",
             message="Add new customer: " + self.name.get(),
             parent = self) == 'yes':
-            self.root.event_generate('<<NewCustomer>>')
 
-        self.update_names()
+            temp = self.name.get().split(' ')
+            self.ncd.fname.set(temp[0])
+            if len(temp) == 2:
+                self.ncd.lname.set(temp[1])
+            elif len(temp) == 3:
+                self.ncd.mname.set(temp[1])
+                self.ncd.lname.set(temp[2])
+            elif len(temp) > 3:
+                self.ncd.mname.set(temp[1])
+                self.ncd.lname.set(' '.join(temp[2:4]))
+
+            self.ncd.show()
+
+        if self.ncd.new_customer_name:
+            self.add_name(self.ncd.new_customer_name)
+            self.output_text("+ - " + self.ncd.new_customer_name + " added.\n")
 
     def disable_date_ent(self, e=None):
         self.date_ent['state'] = 'disabled'
@@ -209,6 +225,14 @@ class LoggerDialog(Toplevel):
     def update_names(self):
         self.populate_names()
         self.name_cb['values'] = self.names
+
+    def add_name(self, name):
+        self.names.append(name)
+        split_names = [x.split(' ') for x in self.names]
+        split_names.sort(key = lambda x: ' '.join([x[2],x[0],x[1]]))
+        self.names = [' '.join(x) for x in split_names]
+        self.name_cb['values'] = self.names
+        self.name.set(name)
         
     def populate_names(self):
         try:

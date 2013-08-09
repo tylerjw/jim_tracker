@@ -6,7 +6,7 @@ ttk.notebook ui
 from ttk import Notebook,Frame,Label
 from Tkinter import Text,Menu
 #jim tracker
-from customer_frame import NewCustomerFrame, Customers
+from customer import NewCustomerFrame, Customers
 from payment import PaymentFrame, Payments
 from log_data import CheckInFrame
 
