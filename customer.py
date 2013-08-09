@@ -22,12 +22,15 @@ Revision history:
 TODO:
     Calender date select
     Red highlighted field validation instead of error dialog boxes.
+
+    frame version
+    requires packing
 '''
 
 from openpyxl import Workbook, load_workbook
 from datetime import date, datetime
 from Tkinter import Toplevel, StringVar, IntVar, W, E, LEFT, Message, BOTH
-from ttk import Entry, Button, Frame, Label, Combobox
+from ttk import Entry, Button, Frame, Label, Combobox,LabelFrame
 from pprint import pprint
 from DialogTemplate import Dialog
 from tkMessageBox import showerror
@@ -127,13 +130,102 @@ class NewCustomerDialog(Dialog):
             if close:
                 self.root.quit()
 
+class NewCustomerFrame(Frame):
+    def __init__(self, master, customers):
+        Frame.__init__(self, master)
+        self.customers = customers
+        self.fname = StringVar()
+        self.lname = StringVar()
+        self.mname = StringVar()
+        self.payment = StringVar()
+        self.date = StringVar()
+        self.iconname="New Customer"
+
+        lf = LabelFrame(self, text="New Customer")
+        lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
+        self.pack(fill='both',expand=True)
+        
+        ### dialog content        
+        Label(lf, text="Name: ").grid(row=0,sticky='e',ipady=2,pady=2)
+        Label(lf, text="Type: ").grid(row=1,sticky='e',ipady=2,pady=2)
+        Label(lf, text="Date:").grid(row=1,column=3,sticky='e',ipady=2,pady=2)
+
+        self.fname_en = Entry(lf, width=20, textvariable=self.fname)
+        self.mname_en = Entry(lf, width=4, textvariable=self.mname)
+        self.lname_en = Entry(lf, width=20, textvariable=self.lname)
+        self.payment_cb = Combobox(lf, textvariable=self.payment, width=12,
+                                   values=("Drop In", "Punch Card", "Monthly"))
+        self.date_en = Entry(lf, width=15, textvariable=self.date)
+
+        Frame(lf, width=5).grid(row=0,column=1,sticky=W)
+        
+        self.fname_en.grid(row=0,column=2,sticky=W)
+        self.mname_en.grid(row=0,column=3,sticky='ew')
+        self.lname_en.grid(row=0,column=4,sticky=W)
+        self.payment_cb.grid(row=1,column=2,columnspan=2,sticky=W)
+        self.date_en.grid(row=1,column=4,columnspan=2,sticky=W)
+        
+        ### buttons
+        Button(lf, text='Reset Values', width=15,
+               command=self.reset_values).grid(row=3,column=0,columnspan=3,sticky='w',padx=10,pady=3)
+        Button(lf, text='Submit', width=15,
+               command=self.add_customer).grid(row=3,column=4,sticky='e')
+
+        # self.root.bind("<Return>", self.add_customer)
+        self.fname_en.focus_set()
+
+        self.reset_values()
+
+    def reset_values(self):
+        self.fname.set('')
+        self.mname.set('')
+        self.lname.set('')
+        # blow out the field every time this is created
+        self.date.set(date.today().strftime("%m/%d/%Y"))
+        self.payment_cb.set("Drop In")
+
+    def add_customer(self, event=None):
+        # validate and show errors
+        if self.fname.get() == '':
+            showerror("Error!", "First name field blank!")
+        elif self.lname.get() == '':
+            showerror("Error!", "Last name field blank!")
+        elif self.mname.get() == '':
+            showerror("Error!", "Middle initial field blank!")
+        elif self.payment.get() not in ("Drop In", "Punch Card", "Monthly"):
+            showerror("Error!", "Incorect Payment type!")
+        elif not re.compile(r'[01]?\d/[0123]?\d/[12]\d{1,3}').search(self.date.get()):
+            showerror("Error!", "Bad entry for date, use format mm/dd/yyyy")
+        else:
+            # do work
+            old, row = self.customers.find(str(self.lname.get()).strip(), str(self.fname.get()).strip(),
+                                           str(self.mname.get()).strip())
+            new = [str(self.lname.get()).strip(), str(self.fname.get()).strip(), str(self.mname.get()).strip(),
+                   str(self.payment.get()).strip(), datetime.strptime(self.date.get(), "%m/%d/%Y")]
+            
+            if not old:
+                self.customers.add(new)
+            else:
+                var = IntVar()
+                
+                diag = AlreadyExistsDialog(self, new, old, var)
+                diag.show()
+                if var.get() == 0: # edit
+                    pass
+                if var.get() == 1: # replace
+                    self.customers.replace(row, new)
+                # elif var.get() == 2: # add duplicate
+                #     self.customers.add(new)
+            
+            # if close:             #this is a frame, we don't close any more
+            #     self.quit()
+
 class AlreadyExistsDialog(Dialog):
-    def __init__(self, parent, master_frame, new, old, variable, class_=None, relx=0.5, rely=0.3):
+    def __init__(self, master_frame, new, old, variable, class_=None, relx=0.5, rely=0.3):
         Dialog.__init__(self, master_frame, 'Warning!',
                         class_, relx, rely)
         self.new = new
         self.old = old
-        self.parent = parent
         self.variable = variable
         
         self.text = "Warning: Customer Found with the same name.\n" + \
@@ -256,9 +348,14 @@ if __name__ == '__main__':
     c = Customers()
     pprint(c.get_list())
     
+    ncf = NewCustomerFrame(None, c)
+    ncf.mainloop()
+
+    c = Customers()
+    pprint(c.get_list())
+    
     root = Frame()
     ncd = NewCustomerDialog(root, c)
     Button(root,text='New Customer',command=ncd.show).pack()
     root.pack()
     root.mainloop()
-    #root.destroy()
