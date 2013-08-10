@@ -32,8 +32,11 @@ from customer import Customers
 
 class PaymentFrame(Frame):
     """docstring for PaymentFrame"""
-    def __init__(self, master, customers, payments):
+    def __init__(self, master, customers, payments, output_text, refresh):
         Frame.__init__(self, master)
+        self.refresh = refresh
+        self.master = master
+        self.output_text = output_text
         self.customers = customers
         self.payments = payments
         self.pname = StringVar()
@@ -57,7 +60,7 @@ class PaymentFrame(Frame):
         Entry(monthly_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
 
         Button(monthly_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
-        Button(monthly_lf,text='Submit',width=15).grid(row=3,column=3,sticky='e')
+        Button(monthly_lf,text='Submit',width=15,command=self.monthly_payment).grid(row=3,column=3,sticky='e')
 
         # Punch Card Customers
         puch_lf = LabelFrame(self, text="Punch Card Customers (Purchace Card)")
@@ -73,11 +76,25 @@ class PaymentFrame(Frame):
         Entry(puch_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
 
         Button(puch_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
-        Button(puch_lf,text='Submit',width=15).grid(row=3,column=3,sticky='e')
+        Button(puch_lf,text='Submit',width=15,command=self.new_punchcard).grid(row=3,column=3,sticky='e')
 
         self.pack(padx=10,pady=10,expand=True,fill='both')
 
         self.update_names()
+
+    def monthly_payment(self):
+        try:
+            self.payments.monthly_payment(self.mname.get())
+            self.output_text("$ - Monthly Payment: " + self.mname.get() + "\n")
+        except IOError:
+            showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
+
+    def new_punchcard(self):
+        try:
+            self.payments.new_punchcard(self.pname.get())
+            self.output_text("$ - New Puncard: " + self.mname.get() + "\n")
+        except IOError:
+            showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
 
     def update_names(self):
         self.populate_names()
@@ -170,7 +187,6 @@ class Payments:
         self.sh.cell(row=row,column=0).value = customer
         self.sh.cell(row=row,column=1).value = date
         self.sh.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
-        print self.sh.cell(row=row,column=1).style.number_format.format_code
 
         self.format_save()
 
@@ -211,8 +227,6 @@ class Payments:
                     break
             if self.sh.cell(row=row,column=cust_column).value == None: # not found
                 return None
-
-        print self.sh.cell(row=row,column=punch_column).value
             
         punch = int(self.sh.cell(row=row,column=punch_column).value) - 1
         self.sh.cell(row=row,column=punch_column).value = punch
@@ -352,6 +366,15 @@ def test1():
     # p.drop_in(drop_in_customers[0])
     # p.drop_in(drop_in_customers[1])
 
+def output_text(text):
+    print text
+
+def refresh():
+    print "refresh..."
+
 if __name__ == '__main__':
-    PaymentFrame(None, Customers(), Payments()).mainloop()
+    root = Frame()
+    root.pack()
+    PaymentFrame(root, Customers(), Payments(), output_text, refresh).pack()
+    root.mainloop()
     # test1()

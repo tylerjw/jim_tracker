@@ -323,7 +323,7 @@ class CheckInFrame(Frame):
 
         btn = Button(self,text="Open Check In Dialog",command=self.logger_diag,
             width=40)
-        btn.pack(padx=100,pady=100)
+        btn.pack(padx=100,pady=50)
         
     def logger_diag(self):
         LoggerDialog(self.master, self.customers, self.payments)

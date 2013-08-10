@@ -137,9 +137,10 @@ class NewCustomerDialog(Dialog):
                 self.root.quit()
 
 class NewCustomerFrame(Frame):
-    def __init__(self, master, customers):
+    def __init__(self, master, customers, output_text, refresh):
         Frame.__init__(self, master)
-
+        self.output_text = output_text
+        self.refresh = refresh
         self.root = master
         self.customers = customers
         self.fname = StringVar()
@@ -206,13 +207,16 @@ class NewCustomerFrame(Frame):
             showerror("Error!", "Bad entry for date, use format mm/dd/yyyy")
         else:
             # do work
+            name = ' '.join([self.fname.get(),self.mname.get(),self.lname.get()])
             old, row = self.customers.find(str(self.lname.get()).strip(), str(self.fname.get()).strip(),
                                            str(self.mname.get()).strip())
             new = [str(self.lname.get()).strip(), str(self.fname.get()).strip(), str(self.mname.get()).strip(),
                    str(self.payment.get()).strip(), datetime.strptime(self.date.get(), "%m/%d/%Y")]
             
-            if not old:
+            if not old: #add customer
                 self.customers.add(new)
+                self.output_text("+ - New Customer: " + name + " (" + self.payment.get() + ")\n")
+                self.refresh()
             else:
                 var = IntVar()
                 
@@ -220,13 +224,10 @@ class NewCustomerFrame(Frame):
                 diag.show()
                 if var.get() == 0: # edit
                     pass
-                if var.get() == 1: # replace
+                if var.get() == 1: # replace customer
                     self.customers.replace(row, new)
-                # elif var.get() == 2: # add duplicate
-                #     self.customers.add(new)
-            
-            # if close:             #this is a frame, we don't close any more
-            #     self.quit()
+                    self.output_text("+ - Modified: " + name + " (" + self.payment.get() + ")\n")
+                    self.refresh()
 
 class AlreadyExistsDialog(Dialog):
     def __init__(self, master_frame, new, old, variable, class_=None, relx=0.5, rely=0.3):
@@ -352,12 +353,18 @@ class Customers:
                 break
         return output, row
 
+def output_text(text):
+    print text,
+
+def refresh():
+    print "refreshing...."
+
 if __name__ == '__main__':
     c = Customers()
     pprint(c.get_list())
     
     root = Frame()
-    ncf = NewCustomerFrame(root, c)
+    ncf = NewCustomerFrame(root, c, output_text, refresh)
     ncf.pack()
     root.pack()
     root.mainloop()
