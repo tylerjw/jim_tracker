@@ -140,7 +140,7 @@ class NewCustomerFrame(Frame):
     def __init__(self, master, customers):
         Frame.__init__(self, master)
 
-        self.root = Toplevel(master)
+        self.root = master
         self.customers = customers
         self.fname = StringVar()
         self.lname = StringVar()
@@ -356,8 +356,11 @@ if __name__ == '__main__':
     c = Customers()
     pprint(c.get_list())
     
-    ncf = NewCustomerFrame(None, c)
-    ncf.mainloop()
+    root = Frame()
+    ncf = NewCustomerFrame(root, c)
+    ncf.pack()
+    root.pack()
+    root.mainloop()
 
     c = Customers()
     pprint(c.get_list())

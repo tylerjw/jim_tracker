@@ -41,6 +41,7 @@ from time import strftime
 
 from customer import NewCustomerDialog, Customers
 from schedule import Schedule
+from payment import Payments
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.style import Border, Fill
@@ -49,7 +50,7 @@ from openpyxl.shared.exc import InvalidFileException
 from pprint import pprint
 
 class LoggerDialog(Toplevel):
-    def __init__(self, master, customers):
+    def __init__(self, master, customers, payments):
         Toplevel.__init__(self,master)
 
         self.root = master
@@ -59,6 +60,7 @@ class LoggerDialog(Toplevel):
 
         self.name = StringVar() # variable for customer
         self.customers = customers # customers object
+        self.payments = payments
         self.names = []
         self.workout = StringVar()
         self.workouts = []
@@ -72,7 +74,7 @@ class LoggerDialog(Toplevel):
         self.logger = Logger() #throws IOError if file is open
 
         inf = Frame(self)
-        inf.pack(padx=10,pady=10)
+        inf.pack(padx=10,pady=10,side='top')
         Label(inf, text="Name:").grid(row=0,column=0,sticky=E,ipady=2,pady=2,padx=10)
         Label(inf, text='Date:').grid(row=1,column=0,sticky=E,ipady=2,pady=2,padx=10)
         Label(inf, text="Workout:").grid(row=2,column=0,sticky=E,ipady=2,pady=2,padx=10)
@@ -90,11 +92,11 @@ class LoggerDialog(Toplevel):
 
         self.log_btn=Button(inf,text="Log Workout",command=self.log,width=12)
         self.log_btn.grid(row=3,column=1,columnspan=2,pady=4,sticky='ew')
-        # self.cancel_btn=Button(inf,text="Cancel",command=self.distroy)
-        # self.cancel_btn.grid(row=3,column=0,pady=4,padx=5,sticky='w')
         
-        self.scrolled_text = ScrolledText(inf,height=5,width=15,wrap='word',state='disabled')
-        self.scrolled_text.grid(row=4,column=0,columnspan=3,sticky='ew')
+        stf = Frame(self)
+        stf.pack(padx=10,pady=10,fill='x',side='top')
+        self.scrolled_text = ScrolledText(stf,height=15,width=50,wrap='word',state='disabled')
+        self.scrolled_text.pack(expand=True,fill='both')
 
         self.update_workouts()
         self.update_names()
@@ -124,21 +126,44 @@ class LoggerDialog(Toplevel):
         elif self.name.get() not in self.names: # new customer
             self.new_customer_error()
         else: # log the workout
-            name = self.name.get().split(' ')
+            name = self.name.get().split(' ',2)
             (line, r) = self.customers.find(name[2],name[0],name[1])
+
             if not line:
                 self.output_text("!! - No record: " + self.name.get() + ".\n")
-            try:
-                self.logger.log(self.workouts[self.workout_cb.current()][0],
-                                self.workouts[self.workout_cb.current()][1],
-                                self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
-                self.output_text(self.name.get() + " Checked In\n")
-                logged = True
-            except IOError:
-                self.output_text("! - " + self.logger.filename + " open in another application.\n")
+
+            while (not logged):
+                try:
+                    self.logger.log(self.workouts[self.workout_cb.current()][0],
+                                    self.workouts[self.workout_cb.current()][1],
+                                    self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+                    logged = True
+                except IOError:
+                    showerror("Error writting to file", "Please close " + self.logger.filename + " and press OK.")
+
 
             if logged:
-                
+                self.output_text(self.name.get() + " - " + line[3] + "\n")
+                logged_payment = False
+                while(not logged_payment):
+                    try:
+                        if line[3] == 'Monthly':
+                            if not self.payments.has_paid_monthly(str(self.name.get())):
+                                self.output_text("$ - Please pay your monthly dues.\n")
+                        elif line[3] == 'Punch Card':
+                            punch = self.payments.punch(str(self.name.get()))
+                            if not punch:
+                                self.output_text("$ - Please purchase another punch card.\n")
+                            else:
+                                self.output_text("$ - You have " + str(punch) + " remaining workouts on your card.\n")
+                        elif line[3] == 'Drop In':
+                            self.payments.drop_in(str(self.name.get()), datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+                            self.output_text("$ - Drop In payment logged.\n")
+                        logged_payment = True
+                    except IOError:
+                        # this is bad, you logged a workout and you failed to log payment
+                        showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
+
                 self.update_time_now()
                 self.set_workout_now()
                 self.update_workouts()
@@ -290,9 +315,10 @@ class Logger:
         self.wb.save(self.filename)
 
 class CheckInFrame(Frame):
-    def __init__(self,master,customers):
+    def __init__(self,master,customers,payments):
         Frame.__init__(self,master)
         self.customers = customers
+        self.payments = payments
         self.master = master
 
         btn = Button(self,text="Open Check In Dialog",command=self.logger_diag,
@@ -300,12 +326,13 @@ class CheckInFrame(Frame):
         btn.pack(padx=100,pady=100)
         
     def logger_diag(self):
-        LoggerDialog(self.master, self.customers)
+        LoggerDialog(self.master, self.customers, self.payments)
 
 if __name__ == '__main__':
     root = Frame()
     root.pack()
     c = Customers()
-    cif = CheckInFrame(root, c)
+    p = Payments()
+    cif = CheckInFrame(root, c, p)
     cif.pack()
     root.mainloop()

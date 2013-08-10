@@ -28,7 +28,7 @@ from openpyxl.cell import get_column_letter
 from ttk import Frame,Label,Entry,Combobox,LabelFrame,Button
 from Tkinter import StringVar
 #jim tracker
-from customer_frame import Customers
+from customer import Customers
 
 class PaymentFrame(Frame):
     """docstring for PaymentFrame"""
@@ -143,7 +143,7 @@ class Payments:
             # set column widths
             column_widths = [20,12,20,12,12,20,12]
             for i, column_width in enumerate(column_widths):
-                worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
+                self.sh.column_dimensions[get_column_letter(i+1)].width = column_width
         
             # auto card import
             today = datetime.today()
@@ -169,6 +169,8 @@ class Payments:
 
         self.sh.cell(row=row,column=0).value = customer
         self.sh.cell(row=row,column=1).value = date
+        self.sh.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
+        print self.sh.cell(row=row,column=1).style.number_format.format_code
 
         self.format_save()
 
@@ -184,6 +186,7 @@ class Payments:
 
         self.sh.cell(row=row,column=2).value = customer
         self.sh.cell(row=row,column=3).value = date
+        self.sh.cell(row=row,column=3).style.number_format.format_code = 'm/d/yyyy'
         self.sh.cell(row=row,column=4).value = punches
         self.sh.cell(row=row,column=4).style.number_format.format_code = '0'
 
@@ -206,7 +209,7 @@ class Payments:
             if self.sh.cell(row=row,column=cust_column).value == customer:
                 if int(self.sh.cell(row=row,column=punch_column).value) > 0:
                     break
-            if self.sh.cell(row=row,column=cust_column) == None: # not found
+            if self.sh.cell(row=row,column=cust_column).value == None: # not found
                 return None
 
         print self.sh.cell(row=row,column=punch_column).value
@@ -214,9 +217,9 @@ class Payments:
         punch = int(self.sh.cell(row=row,column=punch_column).value) - 1
         self.sh.cell(row=row,column=punch_column).value = punch
 
-        return punch
-
         self.format_save()
+
+        return punch
 
     def drop_in(self, customer, date = datetime.today()):
         '''
@@ -230,6 +233,7 @@ class Payments:
 
         self.sh.cell(row=row,column=5).value = customer
         self.sh.cell(row=row,column=6).value = date
+        self.sh.cell(row=row,column=6).style.number_format.format_code = 'm/d/yyyy'
 
         self.format_save()
 
@@ -323,29 +327,31 @@ def test1():
 
     monthly_customers = ['Tyler J Weaver', 'Marcus T Weaver']
     p.monthly_payment(monthly_customers[0])
+    p.monthly_payment(monthly_customers[1])
 
-    for c in monthly_customers:
-        print c
-        if p.has_paid_monthly(c): 
-            print "Paid"
-        else:
-            print "Unpaid"
+    # for c in monthly_customers:
+    #     print c
+    #     if p.has_paid_monthly(c): 
+    #         print "Paid"
+    #     else:
+    #         print "Unpaid"
 
-    punch_card_customers = ['Brad Bradley', 'Sam P Frank']
+    # punch_card_customers = ['Brad Bradley', 'Sam P Frank']
 
-    for c in punch_card_customers:
-        p.new_punchcard(c)
+    # for c in punch_card_customers:
+    #     p.new_punchcard(c)
 
-    for x in range(4):
-        print punch_card_customers[0], p.punch(punch_card_customers[0])
+    # for x in range(4):
+    #     print punch_card_customers[0], p.punch(punch_card_customers[0])
 
-    for x in range(7):
-        print punch_card_customers[1], p.punch(punch_card_customers[1])
+    # for x in range(7):
+    #     print punch_card_customers[1], p.punch(punch_card_customers[1])
 
-    drop_in_customers = ['Tom R Jones', 'Rodgers P Smith']
+    # drop_in_customers = ['Tom R Jones', 'Rodgers P Smith']
 
-    p.drop_in(drop_in_customers[0])
-    p.drop_in(drop_in_customers[1])
+    # p.drop_in(drop_in_customers[0])
+    # p.drop_in(drop_in_customers[1])
 
 if __name__ == '__main__':
     PaymentFrame(None, Customers(), Payments()).mainloop()
+    # test1()

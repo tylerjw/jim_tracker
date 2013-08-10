@@ -38,7 +38,7 @@ class JimNotebook(Frame):
         self.nb = Notebook(self, name='notebook')
 
         #frames
-        ci_frame = CheckInFrame(self.nb, self.customers)
+        ci_frame = CheckInFrame(self.nb, self.customers, self.payments)
         pt_frame = PaymentFrame(self.nb, self.customers, self.payments)
         nc_frame = NewCustomerFrame(self.nb, self.customers)
 
