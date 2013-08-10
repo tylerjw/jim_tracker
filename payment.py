@@ -15,6 +15,8 @@ jim_payments<year>.xlsx (book)
             Date - 6
 
 TODO: forward dated entries
+TODO: Number of punches in new punch card gui
+BUG: Date styles set to general
 '''
 #standard python
 from time import strftime
@@ -92,7 +94,7 @@ class PaymentFrame(Frame):
     def new_punchcard(self):
         try:
             self.payments.new_punchcard(self.pname.get())
-            self.output_text("$ - New Puncard: " + self.mname.get() + "\n")
+            self.output_text("$ - New Puncard: " + self.pname.get() + "\n")
         except IOError:
             showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
 
@@ -186,7 +188,6 @@ class Payments:
 
         self.sh.cell(row=row,column=0).value = customer
         self.sh.cell(row=row,column=1).value = date
-        self.sh.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
 
         self.format_save()
 
@@ -202,9 +203,7 @@ class Payments:
 
         self.sh.cell(row=row,column=2).value = customer
         self.sh.cell(row=row,column=3).value = date
-        self.sh.cell(row=row,column=3).style.number_format.format_code = 'm/d/yyyy'
         self.sh.cell(row=row,column=4).value = punches
-        self.sh.cell(row=row,column=4).style.number_format.format_code = '0'
 
         self.format_save()
 
@@ -221,7 +220,7 @@ class Payments:
         row = 2
         cust_column = 2
         punch_column = 4
-        for row in range(self.highest_row):
+        for row in range(self.highest_row+1):
             if self.sh.cell(row=row,column=cust_column).value == customer:
                 if int(self.sh.cell(row=row,column=punch_column).value) > 0:
                     break
@@ -247,7 +246,6 @@ class Payments:
 
         self.sh.cell(row=row,column=5).value = customer
         self.sh.cell(row=row,column=6).value = date
-        self.sh.cell(row=row,column=6).style.number_format.format_code = 'm/d/yyyy'
 
         self.format_save()
 
@@ -324,17 +322,24 @@ class Payments:
 
     def format_save(self):
         self.sh.garbage_collect()
-        self.format_borders()
+        self.formating()
         self.wb.save(self.filename)
 
-    def format_borders(self):
+    def formating(self):
+        '''
+        apply formatting to new changes
+        '''
         columns = [1, 4, 6]
         for row in range(self.highest_row, self.sh.get_highest_row()):
             for col in columns:
                 cell = self.sh.cell(row=row, column=col).style
                 cell.borders.right.border_style = Border.BORDER_THIN
+            self.sh.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
+            self.sh.cell(row=row,column=3).style.number_format.format_code = 'm/d/yyyy'
+            self.sh.cell(row=row,column=4).style.number_format.format_code = '0'
+            self.sh.cell(row=row,column=6).style.number_format.format_code = 'm/d/yyyy'
 
-        self.highest_row = self.sh.get_highest_row()
+        # self.highest_row = self.sh.get_highest_row() bug 001, somehow these values are being chagned, don't know how, this fixes it though
 
 def test1():
     p = Payments()

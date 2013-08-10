@@ -24,10 +24,6 @@ Revision History:
     Fixed set workout bug
 
 further revision history maintained in git
-
-TODO:
-    Automatically select correct workout.
-    Allow setting date to other than today.
     
 '''
 

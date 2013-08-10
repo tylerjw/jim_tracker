@@ -24,7 +24,6 @@ TODO:
     Red highlighted field validation instead of error dialog boxes.
 
     frame version
-    requires packing
 '''
 
 from openpyxl import Workbook, load_workbook
