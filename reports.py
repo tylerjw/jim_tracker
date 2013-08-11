@@ -7,6 +7,26 @@ from openpyxl.style import Border, Fill
 from openpyxl.cell import get_column_letter
 from pprint import pprint
 from calendar import Calendar
+from time import strftime
+
+def workouts_this_month(customer,log_file,month=strftime("%B")):
+    '''
+    laod the log file and count number of workouts done by customer
+    '''
+    wb = load_workbook(log_file)
+    sh = wb.get_sheet_by_name(month)
+
+    data = get_data(sh)
+    count = len( [row for row in data if row[3] == customer] )
+    return count
+
+def get_data(sh):
+    '''
+    converts sheet into array of arrays (rows of columns)
+    '''
+    #get the data
+    data = [[cell.value for cell in row] for row in sh.rows]
+    return data
 
 def month_report(log_file,month,output_file):
     #read the log
@@ -18,7 +38,7 @@ def month_report(log_file,month,output_file):
         return False
 
     #get the data
-    data = [[cell.value for cell in row] for row in sh.rows]
+    data = get_data(sh)
 
 
     wb = Workbook()
@@ -146,7 +166,8 @@ def auto_column_width(worksheet):
         worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
 
 if __name__ == '__main__':
-    inputf = 'jim_data.xlsx'
-    month = 'July'
-    outputf = month + '_report.xlsx'
-    month_report(inputf,month,outputf)
+    inputf = 'jim_data2013.xlsx'
+    month = 'August'
+    # outputf = month + '_report.xlsx'
+    # month_report(inputf,month,outputf)
+    print workouts_this_month("Dave L Sanders", inputf, month) 

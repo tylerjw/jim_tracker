@@ -38,6 +38,7 @@ from time import strftime
 from customer import NewCustomerDialog, Customers
 from schedule import Schedule
 from payment import Payments
+from reports import workouts_this_month
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.style import Border, Fill
@@ -124,6 +125,8 @@ class LoggerDialog(Toplevel):
         else: # log the workout
             name = self.name.get().split(' ',2)
             (line, r) = self.customers.find(name[2],name[0],name[1])
+            name_str = str(self.name.get())
+            date = datetime.strptime(str(self.date.get()),'%m/%d/%Y')
 
             if not line:
                 self.output_text("!! - No record: " + self.name.get() + ".\n")
@@ -132,7 +135,7 @@ class LoggerDialog(Toplevel):
                 try:
                     self.logger.log(self.workouts[self.workout_cb.current()][0],
                                     self.workouts[self.workout_cb.current()][1],
-                                    self.name.get(), day=datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+                                    name_str, day=date)
                     logged = True
                 except IOError:
                     showerror("Error writting to file", "Please close " + self.logger.filename + " and press OK.")
@@ -144,21 +147,29 @@ class LoggerDialog(Toplevel):
                 while(not logged_payment):
                     try:
                         if line[3] == 'Monthly':
-                            if not self.payments.has_paid_monthly(str(self.name.get())):
+                            if not self.payments.has_paid_monthly(name_str):
                                 self.output_text("$ - Please pay your monthly dues.\n")
                         elif line[3] == 'Punch Card':
-                            punch = self.payments.punch(str(self.name.get()))
+                            punch = self.payments.punch(name_str)
                             if not punch:
                                 self.output_text("$ - Please purchase another punch card.\n")
                             else:
                                 self.output_text("$ - You have " + str(punch) + " remaining workouts on your card.\n")
                         elif line[3] == 'Drop In':
-                            self.payments.drop_in(str(self.name.get()), datetime.strptime(str(self.date.get()),'%m/%d/%Y'))
+                            self.payments.drop_in(name_str, date)
                             self.output_text("$ - Drop In payment logged.\n")
                         logged_payment = True
                     except IOError:
                         # this is bad, you logged a workout and you failed to log payment
                         showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
+                    else:
+                        #exception not raised
+                        try: #accessing log file here
+                            workout_count = str(workouts_this_month(name_str,self.logger.filename,date.strftime("%B"))) 
+                            self.output_text("Workouts you've completed this month: " + workout_count + "\n")
+                        except IOError:
+                            showerror("Error reading from file", "Please close " + self.logger.filename + " and press OK.")
+
 
                 self.update_time_now()
                 self.set_workout_now()
