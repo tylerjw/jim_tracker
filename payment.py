@@ -46,6 +46,8 @@ class PaymentFrame(Frame):
         self.mname = StringVar()
         self.mnames = []
         self.date = StringVar()
+        self.punches = StringVar()
+        self.punches.set(str(10))
         self.date.set(strftime("%m/%d/%Y"))
 
         # Monthly Customers
@@ -53,13 +55,13 @@ class PaymentFrame(Frame):
         monthly_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
         
         Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
-        Label(monthly_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
+        Label(monthly_lf,text="Date:",width=8).grid(row=0,column=2,sticky='e',padx=5)
 
         self.mname_cb = Combobox(monthly_lf,textvariable=self.mname,width=20,values=self.mnames,
             state='readonly')
         self.mname_cb.grid(row=0,column=1,sticky='w')
 
-        Entry(monthly_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
+        Entry(monthly_lf,textvariable=self.date,width=15).grid(row=0,column=3,sticky='e')
 
         Button(monthly_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
         Button(monthly_lf,text='Submit',width=15,command=self.monthly_payment).grid(row=3,column=3,sticky='e')
@@ -69,15 +71,16 @@ class PaymentFrame(Frame):
         puch_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
         
         Label(puch_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
-        Label(puch_lf,text="Date:").grid(row=0,column=2,sticky='e',padx=10)
+        Label(puch_lf,text="Punches:",width=8).grid(row=0,column=2,sticky='e',padx=5)
 
         self.pname_cb = Combobox(puch_lf,textvariable=self.pname,width=20,values=self.pnames,
             state='readonly')
         self.pname_cb.grid(row=0,column=1,sticky='w')
 
-        Entry(puch_lf,textvariable=self.date).grid(row=0,column=3,sticky='w')
+        Entry(puch_lf,textvariable=self.punches,width=15).grid(row=0,column=3,sticky='e')
 
-        Button(puch_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
+        Button(puch_lf,text='Reset Values',width=15,command=self.reset_punchcard).grid(row=3,column=0,
+            columnspan=2,sticky='w',padx=10,pady=3)
         Button(puch_lf,text='Submit',width=15,command=self.new_punchcard).grid(row=3,column=3,sticky='e')
 
         self.pack(padx=10,pady=10,expand=True,fill='both')
@@ -93,10 +96,20 @@ class PaymentFrame(Frame):
 
     def new_punchcard(self):
         try:
-            self.payments.new_punchcard(self.pname.get())
+            punches = int(self.punches.get())
+            if punches < 1 or punches > 10:
+                raise ValueError
+            self.payments.new_punchcard(self.pname.get(), punches = punches)
             self.output_text("$ - New Puncard: " + self.pname.get() + "\n")
         except IOError:
             showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
+        except ValueError:
+            self.output_text("! - Bad value for number of punches: " + self.punches.get() + "\n")
+        else:
+            self.reset_punchcard()
+
+    def reset_punchcard(self):
+        self.punches.set(str(10))
 
     def update_names(self):
         self.populate_names()
