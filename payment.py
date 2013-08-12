@@ -63,7 +63,7 @@ class PaymentFrame(Frame):
 
         Entry(monthly_lf,textvariable=self.date,width=15).grid(row=0,column=3,sticky='e')
 
-        Button(monthly_lf,text='Reset Values',width=15).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
+        Button(monthly_lf,text='Reset Values',width=15,command=self.reset_monthly).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
         Button(monthly_lf,text='Submit',width=15,command=self.monthly_payment).grid(row=3,column=3,sticky='e')
 
         # Punch Card Customers
@@ -89,10 +89,12 @@ class PaymentFrame(Frame):
 
     def monthly_payment(self):
         try:
-            self.payments.monthly_payment(self.mname.get())
+            self.payments.monthly_payment(self.mname.get(),datetime.strptime(self.date.get(), "%m/%d/%Y"))
             self.output_text("$ - Monthly Payment: " + self.mname.get() + "\n")
         except IOError:
             showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
+        except ValueError:
+            self.output_text("! - Bad value for date (mm/dd/yyyy): " + self.date.get() + "\n")
 
     def new_punchcard(self):
         try:
@@ -110,6 +112,9 @@ class PaymentFrame(Frame):
 
     def reset_punchcard(self):
         self.punches.set(str(10))
+
+    def reset_monthly(self):
+        self.date.set(strftime("%m/%d/%Y"))
 
     def update_names(self):
         self.populate_names()
@@ -136,38 +141,59 @@ class Payments:
         Constructor for Payments.
         Throws IOError if file is open in another application.
         '''
+        self.refresh()
+
+    def refresh(self):
+        '''
+        reset all variables
+        '''
         self.month = strftime("%B")
         self.year = strftime("%Y")
-        self.highest_row = 0
-        self.open_workbook()
-        self.open_sheet()
+        self.filename = 'jim_payments' + str(self.year) + '.xlsx'
+
+        self.wb = self.open_workbook()
+        self.sh = self.open_sheet()
         
-    def open_workbook(self):
+    def open_workbook(self,year=None):
         '''
         helper method for initalization
         Throws IOError if file is open in another application.
-        '''
-        self.filename = 'jim_payments' + str(self.year) + '.xlsx'
-        try:
-            self.wb = load_workbook(self.filename)
-        except InvalidFileException: #create new file!
-            self.wb = Workbook()
-            sh = self.wb.get_sheet_by_name("Sheet")
-            self.wb.remove_sheet(sh)
 
-    def open_sheet(self):
+        remember to refresh after save if new file!
+        '''
+        if not year: 
+            year = self.year
+            filename = self.filename
+        else:
+            self.filename = 'jim_payments' + str(year) + '.xlsx'
+
+        try:
+            workbook = load_workbook(self.filename)
+        except InvalidFileException: #create new file!
+            workbook = Workbook()
+            sh = workbook.get_sheet_by_name("Sheet")
+            workbook.remove_sheet(sh)
+
+        return workbook
+
+    def open_sheet(self,workbook=None,month=None):
         '''
         helper method for initalization
         '''
-        self.sh = self.wb.get_sheet_by_name(self.month)
-        if not self.sh: # new month!
-            self.wb.create_sheet(title=self.month)
-            self.sh = self.wb.get_sheet_by_name(self.month)
-            self.sh.append(['Monthly', '', 'Punch Card', '', '', 'Drop In', ''])
-            self.sh.append(['Customer', 'Date', 'Customer', 'Date', 'Remaining', 'Customer', 'Date'])
+        default_month = False
+        if not month: 
+            month = self.month
+            default_month = True
+        if not workbook: workbook = self.wb
+        sheet = workbook.get_sheet_by_name(month)
+        if not sheet: # new month!
+            workbook.create_sheet(title=month)
+            sheet = workbook.get_sheet_by_name(month)
+            sheet.append(['Monthly', '', 'Punch Card', '', '', 'Drop In', ''])
+            sheet.append(['Customer', 'Date', 'Customer', 'Date', 'Remaining', 'Customer', 'Date'])
             for row in range(2):
                 for col in range(7):
-                    cell = self.sh.cell(row=row, column=col).style
+                    cell = sheet.cell(row=row, column=col).style
                     cell.fill.fill_type = Fill.FILL_SOLID
                     cell.fill.start_color.index = "FFDDD9C4"
                     cell.borders.bottom.border_style = Border.BORDER_THIN
@@ -175,17 +201,20 @@ class Payments:
             # set column widths
             column_widths = [20,12,20,12,12,20,12]
             for i, column_width in enumerate(column_widths):
-                self.sh.column_dimensions[get_column_letter(i+1)].width = column_width
-        
-            # auto card import
-            today = datetime.today()
-            old = None
-            if today.month == 1: #january
-                old = datetime(today.year-1, 12, 1)
-            else: # other months
-                old = datetime(today.year, today.month-1, 1)
+                sheet.column_dimensions[get_column_letter(i+1)].width = column_width
+            
+            if default_month:
+                # auto card import
+                today = datetime.today()
+                old = None
+                if today.month == 1: #january
+                    old = datetime(today.year-1, 12, 1)
+                else: # other months
+                    old = datetime(today.year, today.month-1, 1)
 
-            self.update_cards(old.strftime("%B"), old.strftime("%Y"))
+                self.update_cards(old.strftime("%B"), old.strftime("%Y"))
+
+        return sheet
 
         self.format_save()
 
@@ -193,16 +222,31 @@ class Payments:
         '''
         enters a new monthly Payment
         '''
+        if date.month != datetime.today().month:
+            # we only care if the month is different
+            if date.year != datetime.today().year:
+                #different year, open different workbook
+                workbook = self.open_workbook(date.strftime("%Y"))
+                sheet = self.open_sheet(workbook, date.strftime("%B"))
+            else:
+                #same year, just open current month
+                workbook = self.wb
+                sheet = self.open_sheet(month=date.strftime("%B"))
+        else:
+            sheet = self.sh
+            workbook = self.wb
+
         #find the next empty line (row value)
         row = 2
         cust_column = 0
-        while self.sh.cell(row=row,column=cust_column).value != None:
+        while sheet.cell(row=row,column=cust_column).value != None:
             row += 1
 
-        self.sh.cell(row=row,column=0).value = customer
-        self.sh.cell(row=row,column=1).value = date
+        sheet.cell(row=row,column=0).value = customer
+        sheet.cell(row=row,column=1).value = date
 
-        self.format_save()
+        self.format_save(workbook,sheet)
+        self.refresh()
 
     def new_punchcard(self, customer, date = datetime.today(), punches = 10):
         '''
@@ -233,7 +277,7 @@ class Payments:
         row = 2
         cust_column = 2
         punch_column = 4
-        for row in range(self.highest_row+1):
+        for row in range(self.sh.get_highest_row()+1):
             if self.sh.cell(row=row,column=cust_column).value == customer:
                 if int(self.sh.cell(row=row,column=punch_column).value) > 0:
                     break
@@ -333,26 +377,27 @@ class Payments:
 
         return False
 
-    def format_save(self):
-        self.sh.garbage_collect()
-        self.formating()
-        self.wb.save(self.filename)
+    def format_save(self, workbook=None, sheet=None):
+        if not workbook: workbook = self.wb
+        if not sheet: sheet = self.sh
+        sheet.garbage_collect()
+        self.formating(sheet)
+        workbook.save(self.filename)
 
-    def formating(self):
+    def formating(self,sheet):
         '''
         apply formatting to new changes
         '''
         columns = [1, 4, 6]
-        for row in range(self.highest_row, self.sh.get_highest_row()):
+        for row in range(0, sheet.get_highest_row()):
             for col in columns:
-                cell = self.sh.cell(row=row, column=col).style
+                cell = sheet.cell(row=row, column=col).style
                 cell.borders.right.border_style = Border.BORDER_THIN
-            self.sh.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
-            self.sh.cell(row=row,column=3).style.number_format.format_code = 'm/d/yyyy'
-            self.sh.cell(row=row,column=4).style.number_format.format_code = '0'
-            self.sh.cell(row=row,column=6).style.number_format.format_code = 'm/d/yyyy'
+            sheet.cell(row=row,column=1).style.number_format.format_code = 'm/d/yyyy'
+            sheet.cell(row=row,column=3).style.number_format.format_code = 'm/d/yyyy'
+            sheet.cell(row=row,column=4).style.number_format.format_code = '0'
+            sheet.cell(row=row,column=6).style.number_format.format_code = 'm/d/yyyy'
 
-        # self.highest_row = self.sh.get_highest_row() bug 001, somehow these values are being chagned, don't know how, this fixes it though
 
 def test1():
     p = Payments()
@@ -390,9 +435,40 @@ def output_text(text):
 def refresh():
     print "refresh..."
 
+def test2():
+    ''' monthly payment test '''
+    p = Payments()
+
+    monthly_customers = ['Tyler J Weaver', 'Marcus T Weaver']
+    p.monthly_payment(monthly_customers[0])
+    p.monthly_payment(monthly_customers[1])
+    p.monthly_payment(monthly_customers[0],datetime(2013,9,3))
+    p.monthly_payment(monthly_customers[1],datetime(2014,2,2))
+    p.monthly_payment(monthly_customers[0],datetime(2012,12,4))
+    p.monthly_payment(monthly_customers[1],datetime(2013,7,4))
+
+def test3():
+    ''' test updating punch cards 
+    not complete and working
+    '''
+    p = Payments()
+
+    punch_card_customers = ['Brad Bradley', 'Sam P Frank']
+
+    for c in punch_card_customers:
+        p.new_punchcard(c)
+
+    for x in range(4):
+        print punch_card_customers[0], p.punch(punch_card_customers[0])
+
+    for x in range(7):
+        print punch_card_customers[1], p.punch(punch_card_customers[1])
+
+
+
 if __name__ == '__main__':
     root = Frame()
     root.pack()
     PaymentFrame(root, Customers(), Payments(), output_text, refresh).pack()
     root.mainloop()
-    # test1()
+    # test2()
