@@ -151,7 +151,9 @@ class LoggerDialog(Toplevel):
                                 self.output_text("$ - Please pay your monthly dues.\n")
                         elif line[3] == 'Punch Card':
                             punch = self.payments.punch(name_str)
-                            if not punch:
+                            if punch == 0:
+                                self.output_text("$ - Last punch on card, please purchase another.\n")
+                            elif not punch:
                                 self.output_text("$ - Please purchase another punch card.\n")
                             else:
                                 self.output_text("$ - You have " + str(punch) + " remaining workouts on your card.\n")

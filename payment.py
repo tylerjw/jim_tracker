@@ -277,12 +277,17 @@ class Payments:
         row = 2
         cust_column = 2
         punch_column = 4
+        found_zero = False
         for row in range(self.sh.get_highest_row()+1):
             if self.sh.cell(row=row,column=cust_column).value == customer:
                 if int(self.sh.cell(row=row,column=punch_column).value) > 0:
                     break
+                if int(self.sh.cell(row=row,column=punch_column).value) == 0:
+                    found_zero = True
+                    print "found zero"
             if self.sh.cell(row=row,column=cust_column).value == None: # not found
-                return None
+                if found_zero: return 0
+                else: return None
             
         punch = int(self.sh.cell(row=row,column=punch_column).value) - 1
         self.sh.cell(row=row,column=punch_column).value = punch
