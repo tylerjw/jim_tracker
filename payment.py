@@ -246,23 +246,38 @@ class Payments:
         sheet.cell(row=row,column=1).value = date
 
         self.format_save(workbook,sheet)
-        self.refresh()
 
-    def new_punchcard(self, customer, date = datetime.today(), punches = 10):
+    def new_punchcard(self, customer, date = None, punches = 10):
         '''
         creates a new punch card entry
         '''
+        #logic for custom date entries
+        workbook = self.wb
+        sheet = self.sh
+        if date == None:
+            date = datetime.today()
+        else:
+            month = date.strftime("%B")
+            year = date.strftime("%Y")
+            if year != self.year:
+                workbook = self.open_workbook(year)
+                sheet = self.open_sheet(workbook,month)
+            elif month != self.month:
+                sheet = self.open_sheet(self.wb,month)
+            else:
+                sheet = self.sh
+
         #find the next empty line (row value)
         row = 2
         cust_column = 2
-        while self.sh.cell(row=row,column=cust_column).value != None:
+        while sheet.cell(row=row,column=cust_column).value != None:
             row += 1
 
-        self.sh.cell(row=row,column=2).value = customer
-        self.sh.cell(row=row,column=3).value = date
-        self.sh.cell(row=row,column=4).value = punches
+        sheet.cell(row=row,column=2).value = customer
+        sheet.cell(row=row,column=3).value = date
+        sheet.cell(row=row,column=4).value = punches
 
-        self.format_save()
+        self.format_save(workbook,sheet)
 
     def punch(self, customer):
         '''
@@ -358,14 +373,11 @@ class Payments:
         
         cards_copied = 0
         for card in cards:
-            if current_cards.haskey(card[0]):
+            if card[0] in current_cards:
                 if current_card[card[0]] == card[1]: #same punch card
                     continue
-            self.new_punchcard(card[0],card[1],card[2])
+            self.new_punchcard(card[0],datetime.today(),card[2])
             cards_copied += 1
-
-        if cards_copied:
-            self.format_save()
 
         return cards_copied
 
@@ -388,6 +400,7 @@ class Payments:
         sheet.garbage_collect()
         self.formating(sheet)
         workbook.save(self.filename)
+        # self.refresh()
 
     def formating(self,sheet):
         '''
@@ -461,19 +474,10 @@ def test3():
     punch_card_customers = ['Brad Bradley', 'Sam P Frank']
 
     for c in punch_card_customers:
-        p.new_punchcard(c)
+        p.new_punchcard(c,date=datetime(2013,7,1))
 
-    for x in range(4):
-        print punch_card_customers[0], p.punch(punch_card_customers[0])
-
-    for x in range(7):
-        print punch_card_customers[1], p.punch(punch_card_customers[1])
-
-
+    p.update_cards("July")
 
 if __name__ == '__main__':
-    root = Frame()
-    root.pack()
-    PaymentFrame(root, Customers(), Payments(), output_text, refresh).pack()
-    root.mainloop()
-    # test2()
+    # test1()
+    test3()
