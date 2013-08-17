@@ -28,6 +28,11 @@ class Dialog:
         self.root.title(self.title)
         self.root.iconname(self.title)
 
+    def change_title(self,title):
+        self.title = title
+        self.root.title(self.title)
+        self.root.iconname(self.title)
+
     def enable(self):
         ### enable
         self.root.protocol('WM_DELETE_WINDOW', self.wm_delete_window)

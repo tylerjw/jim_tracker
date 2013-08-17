@@ -13,10 +13,6 @@ jim_payments<year>.xlsx (book)
         Drop In (column 5,6)
             Customer - 5
             Date - 6
-
-TODO: forward dated entries
-TODO: Number of punches in new punch card gui
-BUG: Date styles set to general
 '''
 #standard python
 from time import strftime

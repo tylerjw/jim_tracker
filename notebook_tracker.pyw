@@ -8,7 +8,7 @@ from ttk import Notebook,Frame,Label
 from Tkinter import Text,Menu
 from ScrolledText import ScrolledText
 #jim tracker
-from customer import NewCustomerFrame, Customers
+from customer import CustomerFrame, Customers
 from payment import PaymentFrame, Payments
 from log_data import CheckInFrame
 
@@ -42,11 +42,11 @@ class JimNotebook(Frame):
         #frames
         self.ci_frame = CheckInFrame(self.nb, self.customers, self.payments)
         self.pt_frame = PaymentFrame(self.nb, self.customers, self.payments, self.output_text, self.refresh)
-        self.nc_frame = NewCustomerFrame(self.nb, self.customers, self.output_text, self.refresh)
+        self.cu_frame = CustomerFrame(self.nb, self.customers, self.output_text, self.refresh)
 
         #add to notebook
         self.nb.add(self.ci_frame, text="Check In")
-        self.nb.add(self.nc_frame, text="Customers")
+        self.nb.add(self.cu_frame, text="Customers")
         self.nb.add(self.pt_frame, text="Payments")
 
         #pack notebook
@@ -66,7 +66,7 @@ class JimNotebook(Frame):
 
     def refresh(self):
         self.pt_frame.update_names() # update names in payments drop down boxes
-        self.nc_frame.reset_values() # clear out the name value and reset date in new customer
+        self.cu_frame.reset_values() # clear out the name value and reset date in new customer
 
 if __name__ == '__main__':
     JimNotebook().mainloop()
