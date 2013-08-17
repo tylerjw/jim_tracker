@@ -295,7 +295,6 @@ class Payments:
                     break
                 if int(self.sh.cell(row=row,column=punch_column).value) == 0:
                     found_zero = True
-                    print "found zero"
             if self.sh.cell(row=row,column=cust_column).value == None: # not found
                 if found_zero: return 0
                 else: return None
@@ -306,6 +305,18 @@ class Payments:
         self.format_save()
 
         return punch
+
+    def get_remaining_punches(self, customer):
+        #find the punchcard (customer) with remaining punches
+        row = 2
+        cust_column = 2
+        punch_column = 4
+        punches = 0
+        for row in range(self.sh.get_highest_row()+1):
+            if self.sh.cell(row=row,column=cust_column).value == customer:
+                punches += int(self.sh.cell(row=row,column=punch_column).value)
+
+        return punches
 
     def drop_in(self, customer, date = datetime.today()):
         '''

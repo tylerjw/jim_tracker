@@ -118,8 +118,8 @@ class NewCustomerDialog(Dialog):
             showerror("Error!", "Last name field blank!")
         elif self.mname.get() == '':
             showerror("Error!", "Middle initial field blank!")
-        elif self.payment.get() not in ("Drop In", "Punch Card", "Monthly"):
-            showerror("Error!", "Incorect Payment type!")
+        elif self.payment.get() not in ("Drop In", "Punch Card", "Monthly", "Inactive"):
+            showerror("Error!", "Incorect Customer type!")
         elif not re.compile(r'[01]?\d/[0123]?\d/[12]\d{1,3}').search(self.date.get()):
             showerror("Error!", "Bad entry for date, use format mm/dd/yyyy")
         else:
@@ -226,12 +226,11 @@ class CustomerFrame(Frame):
         old_name = str(self.name.get())
         parsed = old_name.split(' ',2)
         (line,row) = self.customers.find(parsed[2],parsed[0],parsed[1])
-        print line
         
         self.ncd.show(line)
         self.refresh() #refresh the global refresh
         name = ' '.join([self.ncd.fname.get(),self.ncd.mname.get(),self.ncd.lname.get()])
-        self.output_text("+ - Modified: " + old_name + ' (' + line[3] + ') \n       -> ' + name + " (" + self.ncd.payment.get() + ")\n")
+        self.output_text("+ - Modified: " + old_name + ' (' + line[3] + ') -> ' + name + " (" + self.ncd.payment.get() + ")\n")
 
     def update_names(self):
         self.populate_names()
@@ -264,8 +263,8 @@ class CustomerFrame(Frame):
             showerror("Error!", "Last name field blank!")
         elif self.mname.get() == '':
             showerror("Error!", "Middle initial field blank!")
-        elif self.payment.get() not in ("Drop In", "Punch Card", "Monthly"):
-            showerror("Error!", "Incorect Payment type!")
+        elif self.payment.get() not in ("Drop In", "Punch Card", "Monthly", "Inactive"):
+            showerror("Error!", "Incorect Customer type!")
         elif not re.compile(r'[01]?\d/[0123]?\d/[12]\d{1,3}').search(self.date.get()):
             showerror("Error!", "Bad entry for date, use format mm/dd/yyyy")
         else:
@@ -396,6 +395,12 @@ class Customers:
             name = ', '.join(values[r][:2]).strip()
             output[name] = values[r][2:]
         return output
+
+    def get_type(self, name):
+        parsed = name.split(' ',2)
+        (line,row) = self.find(parsed[2],parsed[0],parsed[1])
+        if not line: return "Customer Not Found"
+        return line[3]
     
     def find(self, lname, fname, mname):
         self.reload_file()

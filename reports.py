@@ -9,6 +9,9 @@ from pprint import pprint
 from calendar import Calendar
 from time import strftime
 
+from customer import Customers
+from payment import Payments
+
 def workouts_this_month(customer,log_file,month=strftime("%B")):
     '''
     laod the log file and count number of workouts done by customer
@@ -28,7 +31,7 @@ def get_data(sh):
     data = [[cell.value for cell in row] for row in sh.rows]
     return data
 
-def month_report(log_file,month,output_file):
+def month_report(log_file,month,output_file,customers,payments):
     #read the log
     wb = load_workbook(log_file)
     sh = wb.get_sheet_by_name(month)
@@ -44,13 +47,12 @@ def month_report(log_file,month,output_file):
     wb = Workbook()
     sh = wb.get_active_sheet()
     sh.title = "Customers"
-    customers_report(data,sh)
+    customers_report(data,sh,customers,payments)
 
     sh = wb.create_sheet(title='Classes')
     class_sheet = class_report(data,sh)
     
     #write new workbook
-    
     
     wb.save(output_file)
 
@@ -65,25 +67,70 @@ def label_format(sh,columns,row=0,border='bottom'):
         if border == 'top':
             cell.borders.top.border_style = Border.BORDER_THIN
 
-def customers_report(data,sh):
-    '''Build the Customers, # of workouts report'''
+def customers_report(data,sh,c,p):
+    '''
+    Build the Customers, # of workouts report
+    data, log data 
+    sh, output sheet
+    c, customer class  
+    p, payments class
+    '''
 
     #create a dictionary of customers this month
     customers = dict.fromkeys(set([str(x[3]) for x in data[2:]]))
     for key in customers:
         customers[key] = [row for row in data if row[3] == key]
 
-    report_data = [('Customer',"# in " + month)] + \
-                  sorted([(key,str(len(value))) for (key,value) in customers.items()],
-                         key=lambda pair: pair[1])
+    report_data = [('Customer','# of Workouts','Type','Note')] + \
+                  sorted([(key,str(len(value)),c.get_type(key),customer_note(key,c,p)) for (key,value) in customers.items() if c.get_type(key) != "Inactive"],
+                         key=lambda pair: int(pair[1]), reverse=True)
 
     #write data
     for values in report_data:
         sh.append(values)
+        color = None
+        if values[3] is "Unpaid":
+            color = "00ff0000"
+        elif values[3] is "Paid":
+            color = "0000ff00"
+
+        if color:
+            for col in range(4):
+                cell = sh.cell(row=sh.get_highest_row()-1,column=col).style
+                cell.fill.fill_type = Fill.FILL_SOLID
+                cell.fill.start_color.index = color
+
     #format labels
-    label_format(sh,2)
+    label_format(sh,4)
     # set column width
-    auto_column_width(sh)
+
+    for i, column_width in enumerate([25, 13, 18, 25]):
+        sh.column_dimensions[get_column_letter(i+1)].width = column_width
+
+def customer_note(name,customers,payments):
+    '''
+    name - customer name
+    customers - Customers object
+    payments - Payments object
+    '''
+    ctype = customers.get_type(name) # the customer type
+    if ctype == "Customer Not Found":
+        return "Add customer to info file."
+
+    if ctype == "Monthly":
+        if payments.has_paid_monthly(name):
+            return "Paid"
+        else:
+            return "Unpaid"
+
+    if ctype == "Punch Card":
+        return "Remaining Punches: " + str(payments.get_remaining_punches(name))
+
+    if ctype == "Inactive":
+        return "Error!"
+
+    return ""
+
 
 def class_report(data,sh):
     dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[2:]]))))
@@ -168,6 +215,8 @@ def auto_column_width(worksheet):
 if __name__ == '__main__':
     inputf = 'jim_data2013.xlsx'
     month = 'August'
-    # outputf = month + '_report.xlsx'
-    # month_report(inputf,month,outputf)
-    print workouts_this_month("Dave L Sanders", inputf, month) 
+    c = Customers()
+    p = Payments()
+    outputf = month + '_report.xlsx'
+    month_report(inputf,month,outputf,c,p)
+    # print workouts_this_month("Dave L Sanders", inputf, month) 
