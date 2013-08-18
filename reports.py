@@ -8,6 +8,8 @@ from openpyxl.cell import get_column_letter
 from pprint import pprint
 from calendar import Calendar
 from time import strftime
+from datetime import time
+from os import chdir
 
 from customer import Customers
 from payment import Payments
@@ -31,6 +33,32 @@ def get_data(sh):
     data = [[cell.value for cell in row] for row in sh.rows]
     return data
 
+def generate_info_file():
+    class_labels = ['Mon', 'type', 'Tue', 'type', 'Wed', 'type', 'Thurs', 'type', 'Fri', 'type', 'Sat', 'type', 'Sun', 'type']
+    wb = Workbook()
+    sh = wb.get_active_sheet()
+    sh.title = "Schedule"
+    sh.append(class_labels)
+    label_format(sh,len(class_labels))
+    for col in range(1,len(class_labels),2):
+        for row in range(0,14):
+            cell = sh.cell(row=row,column=col).style
+            cell.borders.right.border_style = Border.BORDER_THIN
+    for col in range(0,len(class_labels)):
+        cell = sh.cell(row=14,column=col).style
+        cell.borders.top.border_style = Border.BORDER_THIN
+
+    sh.cell(row=1,column=0).value = time(10,0)
+    sh.cell(row=1,column=0).style.number_format.format_code = 'h:mm'  
+    sh.cell(row=1,column=1).value = "Caveman"
+
+    customers_labels = ['Last', 'First', 'Middle', 'Type', 'Date', 'Joined',]
+    sh = wb.create_sheet(title="Customers")
+    sh.append(customers_labels)
+    label_format(sh,len(customers_labels))
+
+    wb.save("jim_info.xlsx")
+
 def month_report(log_file,month,output_file,customers,payments):
     #read the log
     wb = load_workbook(log_file)
@@ -42,7 +70,6 @@ def month_report(log_file,month,output_file,customers,payments):
 
     #get the data
     data = get_data(sh)
-
 
     wb = Workbook()
     sh = wb.get_active_sheet()
@@ -213,10 +240,12 @@ def auto_column_width(worksheet):
         worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
 
 if __name__ == '__main__':
-    inputf = 'jim_data2013.xlsx'
-    month = 'August'
-    c = Customers()
-    p = Payments()
-    outputf = month + '_report.xlsx'
-    month_report(inputf,month,outputf,c,p)
+    # inputf = 'jim_data2013.xlsx'
+    # month = 'August'
+    # c = Customers()
+    # p = Payments()
+    # outputf = month + '_report.xlsx'
+    # month_report(inputf,month,outputf,c,p)
     # print workouts_this_month("Dave L Sanders", inputf, month) 
+    chdir("C:\\Users\\tyler.weaver\\Projects")
+    generate_info_file()
