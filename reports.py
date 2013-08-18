@@ -8,8 +8,9 @@ from openpyxl.cell import get_column_letter
 from pprint import pprint
 from calendar import Calendar
 from time import strftime
-from datetime import time
-from os import chdir
+from datetime import time,datetime
+from os import chdir, listdir, getcwd
+import re
 
 from customer import Customers
 from payment import Payments
@@ -29,11 +30,42 @@ def get_data(sh):
     '''
     converts sheet into array of arrays (rows of columns)
     '''
+    if not sh:
+        return None
     #get the data
     data = [[cell.value for cell in row] for row in sh.rows]
     return data
 
+def find_years_months(root):
+    """ finds all the data files in root directory 
+    returns dictionary of years maped to lists of months
+
+    throws IOError for any file open that matches the pattern
+    """
+    files = listdir(root)
+    # print files
+
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December']
+
+    output = dict()
+
+    data_re = re.compile(r"jim_data\d\d\d\d[.]xlsx")
+    for filename in files:
+        match = data_re.match(filename)
+        if match:
+            wb = load_workbook(match.group())
+            sheet_names = wb.get_sheet_names()
+            ordered_months = []
+            for m in months:
+                if m in sheet_names:
+                    ordered_months.append(m)
+            output[match.group()[8:12]] = ordered_months
+
+    return output
+
 def generate_info_file():
+    """ generates the jim_info.xlsx file in working directory """
     class_labels = ['Mon', 'type', 'Tue', 'type', 'Wed', 'type', 'Thurs', 'type', 'Fri', 'type', 'Sat', 'type', 'Sun', 'type']
     wb = Workbook()
     sh = wb.get_active_sheet()
@@ -49,7 +81,7 @@ def generate_info_file():
         cell.borders.top.border_style = Border.BORDER_THIN
 
     sh.cell(row=1,column=0).value = time(10,0)
-    sh.cell(row=1,column=0).style.number_format.format_code = 'h:mm'  
+    sh.cell(row=1,column=0).style.number_format.format_code = 'h:mm'
     sh.cell(row=1,column=1).value = "Caveman"
 
     customers_labels = ['Last', 'First', 'Middle', 'Type', 'Date', 'Joined',]
@@ -247,5 +279,10 @@ if __name__ == '__main__':
     # outputf = month + '_report.xlsx'
     # month_report(inputf,month,outputf,c,p)
     # print workouts_this_month("Dave L Sanders", inputf, month) 
-    chdir("C:\\Users\\tyler.weaver\\Projects")
-    generate_info_file()
+
+    # #test generate info file
+    # chdir("C:\\Users\\tyler.weaver\\Projects")
+    # generate_info_file()
+
+    # test find data files
+    print find_years_months(getcwd())

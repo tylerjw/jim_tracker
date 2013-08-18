@@ -289,8 +289,11 @@ class LoggerDialog(Toplevel):
 
 class Logger:
     def __init__(self):
-        self.month = strftime("%B")
-        self.year = strftime("%Y")
+        self.config()
+
+    def config(self,day=date.today()):
+        self.month = day.strftime("%B")
+        self.year = day.strftime("%Y")
         self.filename = 'jim_data' + self.year + '.xlsx'
         try:
             self.wb = load_workbook(self.filename)
@@ -314,8 +317,9 @@ class Logger:
         self.sh.garbage_collect()
         self.wb.save(self.filename)
 
-
     def log(self, hour, class_type, customer, day=date.today()):
+        self.config(day)
+
         line = [day, hour.strftime('%H:%M'), class_type, customer]
         self.sh.garbage_collect()
         self.sh.append(line)
