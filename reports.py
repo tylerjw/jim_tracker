@@ -46,8 +46,8 @@ class ReportsFrame(Frame):
         self.year_cb.grid(row=0,column=1,sticky='w',padx=(0,10),pady=(10,2))
         self.month_cb.grid(row=1,column=1,sticky='w',padx=(0,10),pady=2)
 
-        btn = Button(lf,text="Save Report",command=self.report)
-        btn.grid(row=2,column=0,columnspan=2,sticky='ew',pady=(2,10),padx=10)
+        btn = Button(lf,text="Save Report",command=self.report,width=30)
+        btn.grid(row=2,column=0,columnspan=2,sticky='n',pady=(2,10),padx=10)
 
         #configure the grid to expand
         self.columnconfigure(0,weight=1)
@@ -66,9 +66,6 @@ class ReportsFrame(Frame):
         '''
         if self.year.get() is '':
             self.output_text("! - Please Select a Year")
-            return
-        elif self.month.get() is '':
-            self.output_text("! - Please select a Month")
             return
 
         year = self.year.get()
@@ -279,11 +276,15 @@ def customer_note(name,customers,payments):
 
 
 def class_report(data,sh):
+    '''
+    creates a calendar that shows the number of customers at each workout
+    '''
     dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[1:]]))))
     report_data = dict.fromkeys(dates)
     for day in report_data:
         report_data[day] = dict.fromkeys(set([(x[1],x[2]) for x in data[1:] if x[0].date()==day]))
         for workout in report_data[day]:
+            #set is used to prevent duplicates from being counted
             report_data[day][workout] = len(set([x[3] for x in data[1:] if (x[0].date()==day and (x[1],x[2])==workout)]))
     weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     line = []

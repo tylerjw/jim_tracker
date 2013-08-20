@@ -11,6 +11,7 @@ from ScrolledText import ScrolledText
 from customer import CustomerFrame, Customers
 from payment import PaymentFrame, Payments
 from log_data import CheckInFrame
+from reports import ReportsFrame
 
 class JimNotebook(Frame):
     def __init__(self, name='notebookdemo'):
@@ -43,11 +44,13 @@ class JimNotebook(Frame):
         self.ci_frame = CheckInFrame(self.nb, self.customers, self.payments)
         self.pt_frame = PaymentFrame(self.nb, self.customers, self.payments, self.output_text, self.refresh)
         self.cu_frame = CustomerFrame(self.nb, self.customers, self.output_text, self.refresh)
+        self.re_frame = ReportsFrame(self.nb, self.customers, self.payments, self.output_text)
 
         #add to notebook
         self.nb.add(self.ci_frame, text="Check In")
         self.nb.add(self.cu_frame, text="Customers")
         self.nb.add(self.pt_frame, text="Payments")
+        self.nb.add(self.re_frame, text="Reports")
 
         #pack notebook
         self.nb.pack(expand=True,fill='both',side='top')
@@ -67,6 +70,7 @@ class JimNotebook(Frame):
     def refresh(self):
         self.pt_frame.update_names() # update names in payments drop down boxes
         self.cu_frame.reset_values() # clear out the name value and reset date in new customer
+        self.re_frame.update() # update years and months in report frame
 
 if __name__ == '__main__':
     JimNotebook().mainloop()
