@@ -223,7 +223,7 @@ def customers_report(data,sh,c,p):
     '''
 
     #create a dictionary of customers this month
-    customers = dict.fromkeys(set([str(x[3]) for x in data[2:]]))
+    customers = dict.fromkeys(set([str(x[3]) for x in data[1:]]))
     for key in customers:
         customers[key] = [row for row in data if row[3] == key]
 
@@ -279,14 +279,12 @@ def customer_note(name,customers,payments):
 
 
 def class_report(data,sh):
-    dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[2:]]))))
-    print dates
+    dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[1:]]))))
     report_data = dict.fromkeys(dates)
     for day in report_data:
-        report_data[day] = dict.fromkeys(set([(x[1],x[2]) for x in data[2:] if x[0].date()==day]))
+        report_data[day] = dict.fromkeys(set([(x[1],x[2]) for x in data[1:] if x[0].date()==day]))
         for workout in report_data[day]:
-            report_data[day][workout] = len([x for x in data[2:] if (x[0].date()==day and (x[1],x[2])==workout)])
-
+            report_data[day][workout] = len(set([x[3] for x in data[1:] if (x[0].date()==day and (x[1],x[2])==workout)]))
     weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     line = []
     for wkd in weekdays:
@@ -296,7 +294,6 @@ def class_report(data,sh):
     first = True
     line = []
     workouts = {}
-    # print dates
     for day in Calendar().itermonthdates(dates[0].year,dates[0].month):
         if day.weekday() == 0 and not first:
             sh.append(line)
@@ -330,12 +327,12 @@ def class_report(data,sh):
     sh.append(line)
     label_format(sh,len(line),sh.get_highest_row()-1,'top')
     if workouts:
-        row = sh.get_highest_row()+1
+        row = sh.get_highest_row()
         for wkd in workouts:
             for i,workout in enumerate(workouts[wkd]):
-                sh.cell(row=row+i,column=wkd*3).value = workouts[wkd][0].strftime("%H:%M")
-                sh.cell(row=row+i,column=wkd*3+1).value = workouts[wkd][1]
-                sh.cell(row=row+i,column=wkd*3+2).value = workouts[wkd][2]
+                sh.cell(row=row+i,column=wkd*3).value = workout[0].strftime("%H:%M")
+                sh.cell(row=row+i,column=wkd*3+1).value = workout[1]
+                sh.cell(row=row+i,column=wkd*3+2).value = workout[2]
 
     for col in range(0,sh.get_highest_column()+1,3):
         for row in range(sh.get_highest_row()):
@@ -395,5 +392,5 @@ def test_frame():
     root.mainloop()
 
 if __name__ == '__main__':
-    # test1()
-    test_frame()
+    test1()
+    # test_frame()
