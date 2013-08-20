@@ -12,8 +12,95 @@ from datetime import time,datetime
 from os import chdir, listdir, getcwd
 import re
 
+from ttk import Frame,Label,Combobox,Label,Button,LabelFrame
+from Tkinter import StringVar,Tk
+import tkFileDialog
+
 from customer import Customers
 from payment import Payments
+
+class ReportsFrame(Frame):
+    def __init__(self,master,customers,payments,output_text):
+        Frame.__init__(self,master)
+        self.customers = customers
+        self.payments = payments
+        self.master = master
+        self.output_text = output_text
+
+        self.year_months = find_years_months(getcwd()) # use cwd, this should be set
+
+        self.year = StringVar()
+        self.month = StringVar()
+        self.years = sorted(self.year_months.keys())
+        self.months = []
+
+        lf = LabelFrame(self, text="Generate Report")
+        lf.grid(padx=5,pady=5,row=0,column=0,sticky='ew')
+
+        Label(lf,text="Year: ").grid(row=0,column=0,sticky='e',padx=(10,0),pady=(10,2))
+        Label(lf,text="Month: ").grid(row=1,column=0,sticky='e',padx=(10,0),pady=2)
+
+        self.year_cb = Combobox(lf,textvariable=self.year,width=12,values=self.years,state='readonly')
+        self.month_cb = Combobox(lf,textvariable=self.month,width=12,values=self.months,state='readonly')
+        
+        self.year_cb.grid(row=0,column=1,sticky='w',padx=(0,10),pady=(10,2))
+        self.month_cb.grid(row=1,column=1,sticky='w',padx=(0,10),pady=2)
+
+        btn = Button(lf,text="Save Report",command=self.report)
+        btn.grid(row=2,column=0,columnspan=2,sticky='ew',pady=(2,10),padx=10)
+
+        #configure the grid to expand
+        self.columnconfigure(0,weight=1)
+        lf.rowconfigure(0,weight=1)
+        lf.rowconfigure(1,weight=1)
+        lf.columnconfigure(0,weight=1)
+        lf.columnconfigure(1,weight=1)
+
+        self.year_cb.bind('<<ComboboxSelected>>',self.year_selected)
+
+        self.update() #update the values
+
+    def report(self):
+        '''
+        generate the report, run by clicking Button
+        '''
+        if self.year.get() is '':
+            self.output_text("! - Please Select a Year")
+            return
+        elif self.month.get() is '':
+            self.output_text("! - Please select a Month")
+            return
+
+        year = self.year.get()
+        inputf = 'jim_data' + year + '.xlsx'
+        month = self.month.get()
+        outputf_def = month + year + '_report.xlsx'
+        outputf = tkFileDialog.asksaveasfilename(parent=self,
+            defaultextension='.xlsx', initialfile=outputf_def)
+        if outputf is '': return #file not selected
+
+        #output report
+        month_report(inputf,month,outputf,self.customers,self.payments)
+
+        self.output_text("* - " + self.month.get() + ' ' + self.year.get() + ' report saved to: ' + outputf)
+
+    def update(self):
+        '''
+        method for updating values when things change
+        '''
+        self.year_months = find_years_months(getcwd()) # use cwd, this should be set
+        self.years = sorted(self.year_months.keys())
+        self.months = []
+        self.year_cb['values'] = self.years
+        self.month_cb['values'] = self.months
+
+    def year_selected(self,event=None):
+        '''
+        run when year is year is selected 
+        '''
+        self.months = self.year_months[self.year.get()]
+        self.month_cb['values'] = self.months
+        self.month_cb.current(0)
 
 def workouts_this_month(customer,log_file,month=strftime("%B")):
     '''
@@ -193,6 +280,7 @@ def customer_note(name,customers,payments):
 
 def class_report(data,sh):
     dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[2:]]))))
+    print dates
     report_data = dict.fromkeys(dates)
     for day in report_data:
         report_data[day] = dict.fromkeys(set([(x[1],x[2]) for x in data[2:] if x[0].date()==day]))
@@ -208,7 +296,8 @@ def class_report(data,sh):
     first = True
     line = []
     workouts = {}
-    for day in Calendar().itermonthdates(dates[0].year,dates[1].month):
+    # print dates
+    for day in Calendar().itermonthdates(dates[0].year,dates[0].month):
         if day.weekday() == 0 and not first:
             sh.append(line)
             label_format(sh,len(line),sh.get_highest_row()-1,'top')
@@ -271,13 +360,19 @@ def auto_column_width(worksheet):
     for i, column_width in enumerate(column_widths):
         worksheet.column_dimensions[get_column_letter(i+1)].width = column_width
 
-if __name__ == '__main__':
-    # inputf = 'jim_data2013.xlsx'
-    # month = 'August'
-    # c = Customers()
-    # p = Payments()
-    # outputf = month + '_report.xlsx'
-    # month_report(inputf,month,outputf,c,p)
+def output_text(text):
+    print text,
+
+def refresh():
+    print "refreshing...."
+
+def test1():
+    inputf = 'jim_data2013.xlsx'
+    month = 'August'
+    c = Customers()
+    p = Payments()
+    outputf = month + '_report.xlsx'
+    month_report(inputf,month,outputf,c,p)
     # print workouts_this_month("Dave L Sanders", inputf, month) 
 
     # #test generate info file
@@ -285,4 +380,20 @@ if __name__ == '__main__':
     # generate_info_file()
 
     # test find data files
-    print find_years_months(getcwd())
+    # print find_years_months(getcwd())
+
+def test_frame():
+    c = Customers()
+    p = Payments()
+
+    root = Tk()
+    rf = ReportsFrame(root,c,p,output_text)
+    rf.grid(sticky='nsew')
+    root.rowconfigure(0,weight=1)
+    root.columnconfigure(0,weight=1)
+
+    root.mainloop()
+
+if __name__ == '__main__':
+    # test1()
+    test_frame()
