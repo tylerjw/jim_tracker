@@ -340,16 +340,26 @@ class AlreadyExistsDialog(Dialog):
 
 class Customers:
     def __init__(self, filename='jim_info.xlsx', sheet_name='Customers'):
-        self.wb = load_workbook(filename)
         self.filename = filename
-        self.sh = self.wb.get_sheet_by_name(sheet_name)
+        self.sh = None
         self.sheet_name = sheet_name
-        if not self.sh:
-            print "Error opening " + sh_name + " sheet."
+        try:
+            self.wb = load_workbook(filename)
+        except:
+            #file not found
+            pass
+        else:
+            self.sh = self.wb.get_sheet_by_name(sheet_name)
+            if not self.sh:
+                print "Error opening " + sh_name + " sheet."
 
     def reload_file(self):
-        self.wb = load_workbook(self.filename)
-        self.sh = self.wb.get_sheet_by_name(self.sheet_name)
+        try:
+            self.wb = load_workbook(self.filename)
+            self.sh = self.wb.get_sheet_by_name(self.sheet_name)
+        except:
+            # can't open file!
+            pass
 
     def add(self, new):
         ''' new = [lname, fname, email, ptype, date_created] '''

@@ -208,7 +208,7 @@ class LoggerDialog(Toplevel):
         
     def time_caller(self):
         #updates every 15 min automatically
-        msec = self.refresh_time * 60 * 100
+        msec = self.refresh_time * 6000
 
         self.update_time_now() #update time to current time
         self.set_workout_now()
@@ -305,6 +305,7 @@ class Logger:
         self.sh = self.wb.get_sheet_by_name(self.month)
         if not self.sh:
             self.wb.create_sheet(title=self.month)
+            sheet_created = True
             # print "Created new month log: " + self.month
             self.sh = self.wb.get_sheet_by_name(self.month)
             self.sh.append(['Date','Time','Class Type','Customer'])

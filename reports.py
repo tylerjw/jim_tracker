@@ -173,6 +173,10 @@ def generate_info_file():
     sh.append(customers_labels)
     label_format(sh,len(customers_labels))
 
+    sh = wb.create_sheet(title="Admin")
+    sh.append(['This sheet is used for internal variables, do not modify or remove!'])
+    sh.append(["Last Opened", datetime.today()])
+
     wb.save("jim_info.xlsx")
 
 def month_report(log_file,month,output_file,customers,payments):

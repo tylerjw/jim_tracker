@@ -129,9 +129,9 @@ class PaymentFrame(Frame):
     def update_names(self):
         self.populate_names()
         self.mname_cb['values'] = self.mnames
-        self.mname_cb.current(0)
+        if len(self.mnames) > 0: self.mname_cb.current(0)
         self.pname_cb['values'] = self.pnames
-        self.pname_cb.current(0)
+        if len(self.pnames) > 0: self.pname_cb.current(0)
         self.reset_punchcard()
         self.reset_monthly()
         
