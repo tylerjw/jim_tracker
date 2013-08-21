@@ -213,7 +213,6 @@ class CustomerFrame(Frame):
 
         for i in range(3):
             lf.columnconfigure(i,weight=1)
-
         self.columnconfigure(0,weight=1)
 
         self.fname_en.focus_set() #cursor goes here when frame is created

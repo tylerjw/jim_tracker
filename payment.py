@@ -24,7 +24,7 @@ from openpyxl.style import Border, Fill
 from openpyxl.cell import get_column_letter
 #tkinter
 from ttk import Frame,Label,Entry,Combobox,LabelFrame,Button
-from Tkinter import StringVar
+from Tkinter import StringVar,Tk
 #jim tracker
 from customer import Customers
 
@@ -32,54 +32,57 @@ class PaymentFrame(Frame):
     """docstring for PaymentFrame"""
     def __init__(self, master, customers, payments, output_text, refresh):
         Frame.__init__(self, master)
+
         self.refresh = refresh
         self.master = master
         self.output_text = output_text
         self.customers = customers
         self.payments = payments
+
         self.pname = StringVar()
         self.pnames = []
         self.mname = StringVar()
         self.mnames = []
         self.date = StringVar()
+        self.nmonths = StringVar()
         self.punches = StringVar()
+
+        self.nmonths.set('1')
         self.punches.set(str(10))
         self.date.set(strftime("%m/%d/%Y"))
 
+        self.columnconfigure(0,weight=1)
+
         # Monthly Customers
         monthly_lf = LabelFrame(self, text="Monthly Customers Payment")
-        monthly_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
+        monthly_lf.grid(padx=5,pady=5,row=0,column=0,sticky='ew')
         
-        Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
-        Label(monthly_lf,text="Date:",width=8).grid(row=0,column=2,sticky='e',padx=5)
-
+        Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=(10,0),pady=(10,2))
+        Label(monthly_lf,text="Date:").grid(row=0,column=3,sticky='e',padx=(10,0),pady=(10,2))
+        Label(monthly_lf,text="# of Months:").grid(row=1,column=0,columnspan=2,sticky='e',padx=(10,0),pady=(2,10))
         self.mname_cb = Combobox(monthly_lf,textvariable=self.mname,width=20,values=self.mnames,
             state='readonly')
-        self.mname_cb.grid(row=0,column=1,sticky='w')
+        self.mname_cb.grid(row=0,column=1,columnspan=2,sticky='ew',pady=(10,2))
+        Entry(monthly_lf,textvariable=self.date,width=15).grid(row=0,column=4,sticky='ew',padx=(0,10),pady=(10,2))
+        Entry(monthly_lf,textvariable=self.nmonths).grid(row=1,column=2,sticky='ew',pady=(2,10))
+        Button(monthly_lf,text='Submit',command=self.monthly_payment).grid(row=1,column=4,sticky='ew',padx=(0,10),pady=(2,10))
 
-        Entry(monthly_lf,textvariable=self.date,width=15).grid(row=0,column=3,sticky='e')
-
-        Button(monthly_lf,text='Reset Values',width=15,command=self.reset_monthly).grid(row=3,column=0,columnspan=2,sticky='w',padx=10,pady=3)
-        Button(monthly_lf,text='Submit',width=15,command=self.monthly_payment).grid(row=3,column=3,sticky='e')
+        for i in range(5):
+            monthly_lf.columnconfigure(i,weight=1)
 
         # Punch Card Customers
         puch_lf = LabelFrame(self, text="Punch Card Customers (Purchace Card)")
-        puch_lf.pack(padx=5,pady=5,ipadx=5,ipady=5,side='top')
-        
-        Label(puch_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=10)
-        Label(puch_lf,text="Punches:",width=8).grid(row=0,column=2,sticky='e',padx=5)
+        puch_lf.grid(padx=5,pady=5,row=1,column=0,sticky='ew')
 
-        self.pname_cb = Combobox(puch_lf,textvariable=self.pname,width=20,values=self.pnames,
-            state='readonly')
-        self.pname_cb.grid(row=0,column=1,sticky='w')
+        Label(puch_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=(10,0),pady=(10,2))
+        Label(puch_lf,text="Punches:").grid(row=0,column=2,sticky='e',pady=(10,2))
+        self.pname_cb = Combobox(puch_lf,textvariable=self.pname,width=20,values=self.pnames,state='readonly')
+        self.pname_cb.grid(row=0,column=1,sticky='ew',pady=(10,2))
+        Entry(puch_lf,textvariable=self.punches,width=15).grid(row=0,column=3,sticky='ew',padx=(0,10),pady=(10,2))
+        Button(puch_lf,text='Submit',command=self.new_punchcard).grid(row=3,column=3,sticky='ew',padx=(0,10),pady=(2,10))
 
-        Entry(puch_lf,textvariable=self.punches,width=15).grid(row=0,column=3,sticky='e')
-
-        Button(puch_lf,text='Reset Values',width=15,command=self.reset_punchcard).grid(row=3,column=0,
-            columnspan=2,sticky='w',padx=10,pady=3)
-        Button(puch_lf,text='Submit',width=15,command=self.new_punchcard).grid(row=3,column=3,sticky='e')
-
-        self.pack(padx=10,pady=10,expand=True,fill='both')
+        for i in range(4):
+            puch_lf.columnconfigure(i,weight=1)
 
         self.update_names()
 
@@ -118,6 +121,8 @@ class PaymentFrame(Frame):
         self.mname_cb.current(0)
         self.pname_cb['values'] = self.pnames
         self.pname_cb.current(0)
+        self.reset_punchcard()
+        self.reset_monthly()
         
     def populate_names(self):
         # try:
@@ -381,7 +386,7 @@ class Payments:
         cards_copied = 0
         for card in cards:
             if card[0] in current_cards:
-                if current_card[card[0]] == card[1]: #same punch card
+                if current_cards[card[0]] == card[1]: #same punch card
                     continue
             self.new_punchcard(card[0],datetime.today(),card[2])
             cards_copied += 1
@@ -485,6 +490,24 @@ def test3():
 
     p.update_cards("July")
 
+def output_text(text):
+    print text,
+
+def refresh():
+    print "refreshing...."
+
+def testFrame():
+    c = Customers()
+    p = Payments()
+
+    root = Tk()
+
+    pf = PaymentFrame(root, c, p, output_text, refresh)
+    pf.grid(sticky='nsew')
+    root.rowconfigure(0,weight=1)
+    root.columnconfigure(0,weight=1)
+
+    root.mainloop()
+
 if __name__ == '__main__':
-    # test1()
-    test3()
+    testFrame()
