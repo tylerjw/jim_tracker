@@ -25,6 +25,7 @@ from openpyxl.cell import get_column_letter
 #tkinter
 from ttk import Frame,Label,Entry,Combobox,LabelFrame,Button
 from Tkinter import StringVar,Tk
+from tkMessageBox import showerror
 #jim tracker
 from customer import Customers
 
@@ -59,7 +60,7 @@ class PaymentFrame(Frame):
         
         Label(monthly_lf,text="Name:").grid(row=0,column=0,sticky='e',padx=(10,0),pady=(10,2))
         Label(monthly_lf,text="Date:").grid(row=0,column=3,sticky='e',padx=(10,0),pady=(10,2))
-        Label(monthly_lf,text="# of Months:").grid(row=1,column=0,columnspan=2,sticky='e',padx=(10,0),pady=(2,10))
+        Label(monthly_lf,text="# Months:").grid(row=1,column=0,columnspan=2,sticky='e',padx=(10,0),pady=(2,10))
         self.mname_cb = Combobox(monthly_lf,textvariable=self.mname,width=20,values=self.mnames,
             state='readonly')
         self.mname_cb.grid(row=0,column=1,columnspan=2,sticky='ew',pady=(10,2))
@@ -87,13 +88,23 @@ class PaymentFrame(Frame):
         self.update_names()
 
     def monthly_payment(self):
+        nextpayment_date = datetime.strptime(self.date.get(), "%m/%d/%Y")
         try:
-            self.payments.monthly_payment(self.mname.get(),datetime.strptime(self.date.get(), "%m/%d/%Y"))
-            self.output_text("$ - Monthly Payment: " + self.mname.get() + "\n")
+            self.payments.monthly_payment(self.mname.get(),datetime.strptime(self.date.get(), "%m/%d/%Y"), int(self.nmonths.get()))
+            for i in range(int(self.nmonths.get())):
+                nextpayment_date = increment_month(nextpayment_date)
         except IOError:
             showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
         except ValueError:
-            self.output_text("! - Bad value for date (mm/dd/yyyy): " + self.date.get() + "\n")
+            self.output_text("! - Bad value for date (mm/dd/yyyy) or # Months \n")
+        else:
+            if int(self.nmonths.get()) > 1:
+                self.output_text("$ - " + self.mname.get() + " Paid for " + self.nmonths.get() + " months\n")
+            else:
+                self.output_text("$ - " + self.mname.get() + " Paid for 1 month\n")
+
+            self.output_text("$ - Next Payment Due: " + nextpayment_date.strftime("%B %d, %Y") + "\n")
+            self.refresh()
 
     def new_punchcard(self):
         try:
@@ -219,7 +230,7 @@ class Payments:
 
         self.format_save()
 
-    def monthly_payment(self, customer, date = datetime.today()):
+    def monthly_payment(self, customer, date = datetime.today(), nmonths = 1):
         '''
         enters a new monthly Payment
         '''
@@ -247,6 +258,9 @@ class Payments:
         sheet.cell(row=row,column=1).value = date
 
         self.format_save(workbook,sheet)
+
+        if nmonths > 1:
+            self.monthly_payment(customer,increment_month(date),nmonths-1)
 
     def new_punchcard(self, customer, date = None, punches = 10):
         '''
@@ -458,6 +472,17 @@ def test1():
 
     # p.drop_in(drop_in_customers[0])
     # p.drop_in(drop_in_customers[1])
+
+def increment_month(input_date):
+    '''
+    increments by one month and sets the day value to the 5th
+    '''
+    output = None
+    if input_date.month < 12:
+        output = datetime(input_date.year,input_date.month+1,5)
+    else:
+        output = datetime(input_date.year+1,1,5)
+    return output
 
 def output_text(text):
     print text
