@@ -47,10 +47,11 @@ from openpyxl.shared.exc import InvalidFileException
 from pprint import pprint
 
 class LoggerDialog(Toplevel):
-    def __init__(self, master, customers, payments):
+    def __init__(self, master, customers, payments, refresh):
         Toplevel.__init__(self,master)
 
         self.root = master
+        self.refresh = refresh
 
         self.title("Check In")
         self.iconname = "Check In"
@@ -172,13 +173,10 @@ class LoggerDialog(Toplevel):
                         except IOError:
                             showerror("Error reading from file", "Please close " + self.logger.filename + " and press OK.")
 
-
-                self.update_time_now()
-                self.set_workout_now()
-                self.update_workouts()
+                self.refresh()
             
     def new_customer_error(self):
-        self.ncd = NewCustomerDialog(self,self.customers)
+        self.ncd = NewCustomerDialog(self,self.customers,self.refresh)
         if askquestion(title="New Customer?",
             message="Add new customer: " + self.name.get(),
             parent = self) == 'yes':
@@ -329,18 +327,28 @@ class Logger:
         self.wb.save(self.filename)
 
 class CheckInFrame(Frame):
-    def __init__(self,master,customers,payments):
+    def __init__(self,master,customers,payments,refresh):
         Frame.__init__(self,master)
         self.customers = customers
         self.payments = payments
         self.master = master
+        self.refresh = refresh
 
         btn = Button(self,text="Open Check In Dialog",command=self.logger_diag,
             width=40)
         btn.pack(padx=100,pady=50)
+
+        self.logger_diag = None
         
     def logger_diag(self):
-        LoggerDialog(self.master, self.customers, self.payments)
+        self.logger_diag = LoggerDialog(self.master, self.customers, self.payments, self.refresh)
+
+    def update_values(self):
+        if self.logger_diag:
+            self.logger_diag.update_names()
+            self.logger_diag.update_time_now()
+            self.logger_diag.update_workouts()
+            self.logger_diag.set_workout_now()
 
 if __name__ == '__main__':
     root = Frame()

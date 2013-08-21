@@ -35,7 +35,7 @@ class JimNotebook(Frame):
         self.nb = Notebook(self, name='notebook')
 
         #frames
-        self.ci_frame = CheckInFrame(self.nb, self.customers, self.payments)
+        self.ci_frame = CheckInFrame(self.nb, self.customers, self.payments,self.refresh)
         self.pt_frame = PaymentFrame(self.nb, self.customers, self.payments, self.output_text, self.refresh)
         self.cu_frame = CustomerFrame(self.nb, self.customers, self.output_text, self.refresh)
         self.re_frame = ReportsFrame(self.nb, self.customers, self.payments, self.output_text)
@@ -66,6 +66,7 @@ class JimNotebook(Frame):
         self.scrolled_text['state'] = 'disabled'
 
     def refresh(self):
+        self.ci_frame.update_values() # updates the values in the check in window if open
         self.pt_frame.update_names() # update names in payments drop down boxes
         self.cu_frame.reset_values() # clear out the name value and reset date in new customer
         self.re_frame.update() # update years and months in report frame

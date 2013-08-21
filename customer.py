@@ -33,11 +33,13 @@ import re
 
 
 class NewCustomerDialog(Dialog):
-    def __init__(self, master, customers, edit=False, class_=None, relx=0.5, rely=0.3):
+    def __init__(self, master, customers, refresh, edit=False, class_=None, relx=0.5, rely=0.3):
         if edit:
             self.title = "Edit Customer"
         else:
             self.title = "New Customer"
+
+        self.refresh = refresh
 
         Dialog.__init__(self, master, self.title,
                         class_, relx, rely)
@@ -151,6 +153,7 @@ class NewCustomerDialog(Dialog):
                 self.customers.replace(row, new)
 
             if self.close:
+                self.refresh()
                 self.root.quit()
 
 class CustomerFrame(Frame):
@@ -163,7 +166,7 @@ class CustomerFrame(Frame):
 
         self.name = StringVar() #edit customer
         self.names = []
-        self.ncd = NewCustomerDialog(self.root, self.customers, edit=True)
+        self.ncd = NewCustomerDialog(self.root, self.customers, self.refresh, edit=True)
 
         self.fname = StringVar()
         self.lname = StringVar()

@@ -119,14 +119,19 @@ class PaymentFrame(Frame):
             self.output_text("! - Bad value for number of punches: " + self.punches.get() + "\n")
         else:
             self.reset_punchcard()
+            self.refresh()
 
     def reset_punchcard(self):
         self.punches.set(str(10))
 
     def reset_monthly(self):
         self.date.set(strftime("%m/%d/%Y"))
+        self.nmonths.set('1')
 
     def update_names(self):
+        '''
+        run by refresh
+        '''
         self.populate_names()
         self.mname_cb['values'] = self.mnames
         if len(self.mnames) > 0: self.mname_cb.current(0)
@@ -325,15 +330,17 @@ class Payments:
 
         return punch
 
-    def get_remaining_punches(self, customer):
+    def get_remaining_punches(self, customer, year=strftime("%Y"), month=strftime("%B")):
         #find the punchcard (customer) with remaining punches
+        workbook = self.open_workbook(year)
+        sheet = self.open_sheet(workbook, month)
         row = 2
         cust_column = 2
         punch_column = 4
         punches = 0
-        for row in range(self.sh.get_highest_row()+1):
-            if self.sh.cell(row=row,column=cust_column).value == customer:
-                punches += int(self.sh.cell(row=row,column=punch_column).value)
+        for row in range(sheet.get_highest_row()+1):
+            if sheet.cell(row=row,column=cust_column).value == customer:
+                punches += int(sheet.cell(row=row,column=punch_column).value)
 
         return punches
 
@@ -407,14 +414,17 @@ class Payments:
 
         return cards_copied
 
-    def has_paid_monthly(self, customer):
+    def has_paid_monthly(self, customer, month, year):
         '''
         Returns true if customer has paid monthly dues
         '''
+        workbook = self.open_workbook(year)
+        sheet = self.open_sheet(workbook, month)
+
         row = 2
         cust_column = 0
-        while self.sh.cell(row=row,column=cust_column).value != None:
-            if customer == self.sh.cell(row=row,column=cust_column).value:
+        while sheet.cell(row=row,column=cust_column).value != None:
+            if customer == sheet.cell(row=row,column=cust_column).value:
                 return True
             row += 1
 

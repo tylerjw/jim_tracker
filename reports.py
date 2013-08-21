@@ -9,7 +9,7 @@ from pprint import pprint
 from calendar import Calendar
 from time import strftime
 from datetime import time,datetime
-from os import chdir, listdir, getcwd
+from os import chdir, listdir, getcwd, system
 import re
 
 from ttk import Frame,Label,Combobox,Label,Button,LabelFrame
@@ -77,9 +77,11 @@ class ReportsFrame(Frame):
         if outputf is '': return #file not selected
 
         #output report
-        month_report(inputf,month,outputf,self.customers,self.payments)
+        month_report(inputf,month,year,outputf,self.customers,self.payments)
 
-        self.output_text("* - " + self.month.get() + ' ' + self.year.get() + ' report saved to: ' + outputf)
+        self.output_text("* - " + self.month.get() + ' ' + self.year.get() + ' report saved to: ' + outputf + '\n')
+
+        system(outputf) # open the file
 
     def update(self):
         '''
@@ -179,7 +181,7 @@ def generate_info_file():
 
     wb.save("jim_info.xlsx")
 
-def month_report(log_file,month,output_file,customers,payments):
+def month_report(log_file,month,year,output_file,customers,payments):
     #read the log
     wb = load_workbook(log_file)
     sh = wb.get_sheet_by_name(month)
@@ -194,7 +196,7 @@ def month_report(log_file,month,output_file,customers,payments):
     wb = Workbook()
     sh = wb.get_active_sheet()
     sh.title = "Customers"
-    customers_report(data,sh,customers,payments)
+    customers_report(data,sh,customers,payments,month,year)
 
     sh = wb.create_sheet(title='Classes')
     class_sheet = class_report(data,sh)
@@ -214,7 +216,7 @@ def label_format(sh,columns,row=0,border='bottom'):
         if border == 'top':
             cell.borders.top.border_style = Border.BORDER_THIN
 
-def customers_report(data,sh,c,p):
+def customers_report(data,sh,c,p,month,year):
     '''
     Build the Customers, # of workouts report
     data, log data 
@@ -229,7 +231,7 @@ def customers_report(data,sh,c,p):
         customers[key] = [row for row in data if row[3] == key]
 
     report_data = [('Customer','# of Workouts','Type','Note')] + \
-                  sorted([(key,str(len(value)),c.get_type(key),customer_note(key,c,p)) for (key,value) in customers.items() if c.get_type(key) != "Inactive"],
+                  sorted([(key,str(len(value)),c.get_type(key),customer_note(key,c,p,month,year)) for (key,value) in customers.items()],
                          key=lambda pair: int(pair[1]), reverse=True)
 
     #write data
@@ -254,7 +256,7 @@ def customers_report(data,sh,c,p):
     for i, column_width in enumerate([25, 13, 18, 25]):
         sh.column_dimensions[get_column_letter(i+1)].width = column_width
 
-def customer_note(name,customers,payments):
+def customer_note(name,customers,payments,month,year):
     '''
     name - customer name
     customers - Customers object
@@ -265,16 +267,13 @@ def customer_note(name,customers,payments):
         return "Add customer to info file."
 
     if ctype == "Monthly":
-        if payments.has_paid_monthly(name):
+        if payments.has_paid_monthly(name,month,year):
             return "Paid"
         else:
             return "Unpaid"
 
     if ctype == "Punch Card":
-        return "Remaining Punches: " + str(payments.get_remaining_punches(name))
-
-    if ctype == "Inactive":
-        return "Error!"
+        return "Remaining Punches: " + str(payments.get_remaining_punches(name,year,month))
 
     return ""
 
@@ -371,10 +370,11 @@ def refresh():
 def test1():
     inputf = 'jim_data2013.xlsx'
     month = 'August'
+    year = '2013'
     c = Customers()
     p = Payments()
     outputf = month + '_report.xlsx'
-    month_report(inputf,month,outputf,c,p)
+    month_report(inputf,month,year,outputf,c,p)
     # print workouts_this_month("Dave L Sanders", inputf, month) 
 
     # #test generate info file
