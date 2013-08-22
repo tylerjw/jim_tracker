@@ -86,7 +86,7 @@ class JimNotebook(Frame):
         else:
             output += "! - jim_info.xlsx not found in working directory.\n"
             generate_info_file()
-            output += "A - Generated empty jim_info.xlsx file into working directory."
+            output += "A - Generated empty jim_info.xlsx file into working directory.\n"
 
         return output
 
