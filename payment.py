@@ -133,10 +133,12 @@ class PaymentFrame(Frame):
         run by refresh
         '''
         self.populate_names()
+        if len(self.mnames) == 0: self.mnames = ['']
         self.mname_cb['values'] = self.mnames
-        if len(self.mnames) > 0: self.mname_cb.current(0)
+        self.mname_cb.current(0)
+        if len(self.pnames) == 0: self.pnames = ['']
         self.pname_cb['values'] = self.pnames
-        if len(self.pnames) > 0: self.pname_cb.current(0)
+        self.pname_cb.current(0)
         self.reset_punchcard()
         self.reset_monthly()
         

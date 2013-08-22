@@ -3,19 +3,22 @@ from datetime import time
 
 class Schedule:
     def __init__(self, filename='jim_info.xlsx', sheet_name='Schedule'):
-        self.wb = load_workbook(filename)
         self.filename = filename
-        self.sh = self.wb.get_sheet_by_name(sheet_name)
-        if not self.sh:
-            print "Error opening " + sh_name + " sheet."
-
+        self.sheet_name = sheet_name
         self.weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        self.load_file()
 
     def weekday_to_str(self, idx):
         return self.weekdays[idx]
 
+    def load_file(self):
+        self.wb = load_workbook(self.filename)
+        self.sh = self.wb.get_sheet_by_name(self.sheet_name)
+        if not self.sh:
+            print "Error opening " + self.sheet_name + " sheet."
         
     def get_dict(self):
+        self.load_file()
         output = {}
         max_row = self.sh.get_highest_row()
         range_str = "A1:B"+str(max_row)

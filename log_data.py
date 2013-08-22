@@ -236,7 +236,6 @@ class LoggerDialog(Toplevel):
     def update_workouts(self, e=None):
         try:
             self.populate_workouts()
-            self.workout_cb['values'] = []
             self.workout_cb['values'] = self.workouts_form
         except ValueError:
             self.workout.set(' Enter Valid Date ')
@@ -256,7 +255,9 @@ class LoggerDialog(Toplevel):
 
     def update_names(self):
         self.populate_names()
+        if len(self.names) == 0: self.names = ['']
         self.name_cb['values'] = self.names
+        self.name_cb.set(' ')
 
     def add_name(self, name):
         self.names.append(name)

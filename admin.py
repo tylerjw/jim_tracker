@@ -13,12 +13,13 @@ from os import chdir, getcwd, listdir
 from time import strftime
 
 class AdminFrame(Frame):
-    def __init__(self,master,customers,payments,output_text,refresh):
+    def __init__(self,master,customers,payments,output_text,refresh,root_dir):
         Frame.__init__(self,master)
         self.customers = customers
         self.payments = payments
         self.output_text = output_text
         self.refresh = refresh
+        self.root_dir = root_dir
 
         self.year_months = find_years_months(getcwd())
 
@@ -76,10 +77,24 @@ class AdminFrame(Frame):
         '''
         directory = tkFileDialog.askdirectory(parent=self,initialdir=getcwd())
         if directory != '': 
-            # user selected one, not canceled
-            self.root_directory.set(directory)
-            chdir(directory)
-            self.refresh()
+            try:
+                fh = open(self.root_dir + '/config.ini', 'w')
+                fh.write(directory)
+                fh.close()
+            except IOError:
+                self.output_text("! - config.ini file open in another program, close and try again.")
+            else:
+                # user selected one, not canceled, and config file not open
+                self.root_directory.set(directory)
+                chdir(directory)
+                self.refresh()
+
+                #check for jim_info file
+                files = listdir(getcwd())
+                if "jim_info.xlsx" not in files:
+                    self.output_text("! - jim_info.xlsx not found in working directory.\n")
+                    self.generate()
+
 
     def copy(self):
         if self.month.get() is '':

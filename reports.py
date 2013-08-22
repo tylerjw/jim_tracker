@@ -89,9 +89,12 @@ class ReportsFrame(Frame):
         '''
         self.year_months = find_years_months(getcwd()) # use cwd, this should be set
         self.years = sorted(self.year_months.keys())
-        self.months = []
+        self.months = ['']
+        if len(self.years) == 0: self.years = ['']
         self.year_cb['values'] = self.years
         self.month_cb['values'] = self.months
+        self.year_cb.current(0)
+        self.month_cb.current(0)
 
     def year_selected(self,event=None):
         '''

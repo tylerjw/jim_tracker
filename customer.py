@@ -233,8 +233,13 @@ class CustomerFrame(Frame):
         self.output_text("+ - Modified: " + old_name + ' (' + line[3] + ') -> ' + name + " (" + self.ncd.payment.get() + ")\n")
 
     def update_names(self):
+        '''
+        update names in edit Combobox
+        '''
         self.populate_names()
+        if len(self.names) == 0: self.names = ['']
         self.name_cb['values'] = self.names
+        self.name_cb.current(0)
 
     def populate_names(self):
         try:
