@@ -90,9 +90,7 @@ class PaymentFrame(Frame):
     def monthly_payment(self):
         nextpayment_date = datetime.strptime(self.date.get(), "%m/%d/%Y")
         try:
-            self.payments.monthly_payment(self.mname.get(),datetime.strptime(self.date.get(), "%m/%d/%Y"), int(self.nmonths.get()))
-            for i in range(int(self.nmonths.get())):
-                nextpayment_date = increment_month(nextpayment_date)
+            nextpayment_date = self.payments.monthly_payment(self.mname.get(),datetime.strptime(self.date.get(), "%m/%d/%Y"), int(self.nmonths.get()))
         except IOError:
             showerror("Error writting to file", "Please close " + self.payments.filename + " and press OK.")
         except ValueError:
@@ -164,7 +162,7 @@ class Payments:
 
     def refresh(self):
         '''
-        reset all variables
+        reset all variables to current year and month
         '''
         self.month = strftime("%B")
         self.year = strftime("%Y")
@@ -237,23 +235,17 @@ class Payments:
 
         self.format_save()
 
-    def monthly_payment(self, customer, date = datetime.today(), nmonths = 1):
+    def monthly_payment(self, customer, date = datetime.today(), nmonths = 1, payment_date = None):
         '''
         enters a new monthly Payment
+        uses next payment due to auto add payments at further dates
         '''
-        if date.month != datetime.today().month:
-            # we only care if the month is different
-            if date.year != datetime.today().year:
-                #different year, open different workbook
-                workbook = self.open_workbook(date.strftime("%Y"))
-                sheet = self.open_sheet(workbook, date.strftime("%B"))
-            else:
-                #same year, just open current month
-                workbook = self.wb
-                sheet = self.open_sheet(month=date.strftime("%B"))
-        else:
-            sheet = self.sh
-            workbook = self.wb
+        if not payment_date:
+            payment_date = self.next_payment_due(customer)
+            
+        workbook = self.open_workbook(payment_date.strftime("%Y"))
+        sheet = self.open_sheet(workbook, payment_date.strftime("%B"))
+
 
         #find the next empty line (row value)
         row = 2
@@ -267,7 +259,11 @@ class Payments:
         self.format_save(workbook,sheet)
 
         if nmonths > 1:
-            self.monthly_payment(customer,increment_month(date),nmonths-1)
+            payment_date = increment_month(payment_date)
+            nmonths -= 1
+            self.monthly_payment(customer,date,nmonths,payment_date)
+
+        return self.next_payment_due(customer)
 
     def new_punchcard(self, customer, date = None, punches = 10):
         '''
@@ -415,6 +411,18 @@ class Payments:
             cards_copied += 1
 
         return cards_copied
+
+    def next_payment_due(self, customer):
+        '''
+        returns the date the next payment is due by the customer
+        monthly customers
+        Note: payments are due on the 5th of every month
+        '''
+        test_date = datetime(datetime.today().year,datetime.today().month,5)
+        while self.has_paid_monthly(customer,test_date.strftime("%B"),test_date.strftime("%Y")):
+            test_date = increment_month(test_date)
+
+        return datetime(test_date.year,test_date.month,5)
 
     def has_paid_monthly(self, customer, month = strftime("%B"), year = strftime("%Y")):
         '''

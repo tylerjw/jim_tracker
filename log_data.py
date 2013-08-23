@@ -148,8 +148,11 @@ class LoggerDialog(Toplevel):
                 while(not logged_payment):
                     try:
                         if line[3] == 'Monthly':
-                            if not self.payments.has_paid_monthly(name_str):
+                            payment_due = self.payments.next_payment_due(name_str)
+                            if payment_due < datetime.today():
                                 self.output_text("$ - Please pay your monthly dues.\n")
+                            else:
+                                self.output_text("$ - Next payment due: " + payment_due.strftime("%B %d, %Y\n"))
                         elif line[3] == 'Punch Card':
                             punch = self.payments.punch(name_str)
                             if punch == 0:
