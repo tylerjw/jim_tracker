@@ -67,6 +67,9 @@ class ReportsFrame(Frame):
         if self.year.get() is '':
             self.output_text("! - Please Select a Year")
             return
+        if self.month.get() is '':
+            self.output_text("! - Please select a Month")
+            return
 
         year = self.year.get()
         inputf = 'jim_data' + year + '.xlsx'
@@ -93,7 +96,6 @@ class ReportsFrame(Frame):
         if len(self.years) == 0: self.years = ['']
         self.year_cb['values'] = self.years
         self.month_cb['values'] = self.months
-        self.year_cb.current(0)
         self.month_cb.current(0)
 
     def year_selected(self,event=None):
