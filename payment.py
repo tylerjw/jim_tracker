@@ -416,7 +416,7 @@ class Payments:
 
         return cards_copied
 
-    def has_paid_monthly(self, customer, month, year):
+    def has_paid_monthly(self, customer, month = strftime("%B"), year = strftime("%Y")):
         '''
         Returns true if customer has paid monthly dues
         '''
