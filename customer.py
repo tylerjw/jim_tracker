@@ -366,7 +366,7 @@ class Customers:
             self.wb = load_workbook(self.filename)
             self.sh = self.wb.get_sheet_by_name(self.sheet_name)
         except:
-            # can't open file!
+            print "error, can't open " + self.filename # can't open file!
             pass
 
     def add(self, new):
