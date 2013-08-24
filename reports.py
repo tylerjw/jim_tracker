@@ -10,7 +10,7 @@ from calendar import Calendar
 from time import strftime
 from datetime import time,datetime
 from os import chdir, listdir, getcwd, system
-import re
+import re,sys
 
 from ttk import Frame,Label,Combobox,Label,Button,LabelFrame
 from Tkinter import StringVar,Tk
@@ -84,7 +84,10 @@ class ReportsFrame(Frame):
 
         self.output_text("* - " + self.month.get() + ' ' + self.year.get() + ' report saved to: ' + outputf + '\n')
 
-        system(outputf) # open the file
+        if sys.platform is 'debian': 
+            system('open ' + outputf)
+        else:
+            system(outputf) # open the file
 
     def update(self):
         '''
@@ -207,7 +210,6 @@ def month_report(log_file,month,year,output_file,customers,payments):
     class_sheet = class_report(data,sh)
     
     #write new workbook
-    
     wb.save(output_file)
 
 def label_format(sh,columns,row=0,border='bottom'):

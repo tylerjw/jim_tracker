@@ -82,7 +82,7 @@ class AdminFrame(Frame):
                 fh.write(directory)
                 fh.close()
             except IOError:
-                self.output_text("! - config.ini file open in another program, close and try again.")
+                self.output_text("! - config.ini file open in another program, close and try again.\n")
             else:
                 # user selected one, not canceled, and config file not open
                 self.root_directory.set(directory)

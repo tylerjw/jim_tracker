@@ -2,4 +2,4 @@ from distutils.core import setup
 import py2exe
 
 setup(
-    windows=['notebook_tracker.pyw'])
+    windows=['jim_tracker.pyw'])
