@@ -86,10 +86,17 @@ class ReportsFrame(Frame):
 
         # print stat(outputf)
 
-        if sys.platform is 'debian': 
+        if sys.platform is 'debian':
             system('open ' + outputf + ' &')
+        # I do not know why, but this is not ok:
+        # elif sys.platform is 'darwin':
+        #     self.output_text(sys.platform + "open " + outputf + " &")
+        #     system('open ' + outputf + ' &')
+        #
+        # If I change this, everything works fine.
         else:
-            system(outputf) # open the file
+            system('open ' + outputf + ' &')
+#            system(outputf) # open the file
 
     def update(self):
         '''
