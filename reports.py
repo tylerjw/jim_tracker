@@ -9,8 +9,8 @@ from pprint import pprint
 from calendar import Calendar
 from time import strftime
 from datetime import time,datetime
-from os import chdir, listdir, getcwd, system
-import re
+from os import chdir, listdir, getcwd, system, stat
+import re,sys
 
 from ttk import Frame,Label,Combobox,Label,Button,LabelFrame
 from Tkinter import StringVar,Tk
@@ -84,7 +84,12 @@ class ReportsFrame(Frame):
 
         self.output_text("* - " + self.month.get() + ' ' + self.year.get() + ' report saved to: ' + outputf + '\n')
 
-        system(outputf) # open the file
+        # print stat(outputf)
+
+        if sys.platform == 'debian' or 'darwin':
+            system('open ' + outputf + ' &')
+        else:
+            system(outputf) # open the file
 
     def update(self):
         '''
@@ -175,7 +180,7 @@ def generate_info_file():
     sh.cell(row=1,column=0).style.number_format.format_code = 'h:mm'
     sh.cell(row=1,column=1).value = "Caveman"
 
-    customers_labels = ['Last', 'First', 'Middle', 'Type', 'Date', 'Joined',]
+    customers_labels = ['Last', 'First', 'Middle', 'Type', 'Date Joined',]
     sh = wb.create_sheet(title="Customers")
     sh.append(customers_labels)
     label_format(sh,len(customers_labels))
@@ -204,10 +209,9 @@ def month_report(log_file,month,year,output_file,customers,payments):
     customers_report(data,sh,customers,payments,month,year)
 
     sh = wb.create_sheet(title='Classes')
-    class_sheet = class_report(data,sh)
+    class_report(data,sh)
     
     #write new workbook
-    
     wb.save(output_file)
 
 def label_format(sh,columns,row=0,border='bottom'):
@@ -287,7 +291,9 @@ def class_report(data,sh):
     '''
     creates a calendar that shows the number of customers at each workout
     '''
+    # print data
     dates = map(lambda x: x.date(), sorted(list(set([x[0] for x in data[1:]]))))
+    # print dates
     report_data = dict.fromkeys(dates)
     for day in report_data:
         report_data[day] = dict.fromkeys(set([(x[1],x[2]) for x in data[1:] if x[0].date()==day]))
@@ -350,7 +356,6 @@ def class_report(data,sh):
 
     auto_column_width(sh)
                 
-
 def auto_column_width(worksheet):
     raw_data = worksheet.range(worksheet.calculate_dimension())
     data = [[str(x.value) for x in row] for row in raw_data]
@@ -402,5 +407,5 @@ def test_frame():
     root.mainloop()
 
 if __name__ == '__main__':
-    test1()
-    # test_frame()
+    # test1()
+    test_frame()

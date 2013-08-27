@@ -8,6 +8,6 @@ Usage:
 from setuptools import setup
 
 setup(
-    app=['notebook_tracker.pyw'],
+    app=['jim_tracker.pyw'],
     setup_requires=["py2app"],
 )

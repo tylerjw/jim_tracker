@@ -1,5 +1,5 @@
 '''
-ttk.notebook ui
+jim tracker main application
 
 '''
 
