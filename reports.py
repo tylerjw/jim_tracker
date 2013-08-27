@@ -86,7 +86,7 @@ class ReportsFrame(Frame):
 
         # print stat(outputf)
 
-        if sys.platform == 'debian' or 'darwin':
+        if sys.platform == 'darwin':
             system('open ' + outputf + ' &')
         else:
             system(outputf) # open the file
