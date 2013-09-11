@@ -89,7 +89,7 @@ class JimNotebook(Frame):
             directory = fh.readline()
             chdir(directory)
             fh.close()
-        else: # first time
+        else: # first tidme
             try:
                 fh = open("config.ini", 'w')
             except IOError:

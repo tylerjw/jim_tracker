@@ -220,16 +220,16 @@ class Payments:
             for i, column_width in enumerate(column_widths):
                 sheet.column_dimensions[get_column_letter(i+1)].width = column_width
             
-            if default_month:
-                # auto card import
-                today = datetime.today()
-                old = None
-                if today.month == 1: #january
-                    old = datetime(today.year-1, 12, 1)
-                else: # other months
-                    old = datetime(today.year, today.month-1, 1)
+            # if default_month:
+            #     # auto card import
+            #     today = datetime.today()
+            #     old = None
+            #     if today.month == 1: #january
+            #         old = datetime(today.year-1, 12, 1)
+            #     else: # other months
+            #         old = datetime(today.year, today.month-1, 1)
 
-                self.update_cards(old.strftime("%B"), old.strftime("%Y"))
+            #     self.update_cards(old.strftime("%B"), old.strftime("%Y"))
 
         return sheet
 
@@ -365,6 +365,7 @@ class Payments:
         returns None if month or year does not exist
         returns number of cards copied otherwise
         '''
+        self.refresh()
         if not year:
             year = self.year
 
